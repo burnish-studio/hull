@@ -90,12 +90,14 @@ required cgroup context.
 tools work correctly. No user-level systemd services are needed for our WSL
 dev environment.
 
-**Recommended next step:** Before investing more time, check the NixOS-WSL
-issue tracker (`github.com/nix-community/NixOS-WSL/issues`) for this specific
-error (`Failed to spawn executor: Device or resource busy` on `user@.service`).
-This may be a known upstream bug with a fix already available or in progress.
-If it's a known WSL2 kernel limitation, document it and move on — the system
-is fully functional without a user session.
+**Relevant issues found (start here Monday):**
+- https://github.com/nix-community/NixOS-WSL/issues/888 — NixOS-WSL issue
+  tracking this exact symptom.
+- https://github.com/microsoft/WSL/issues/13826#issuecomment-3996921259 — the
+  underlying WSL2 kernel issue.
+Research these first; a fix or workaround may already be documented. If it's a
+known WSL2 kernel limitation with no clean fix, document it and move on — the
+system is fully functional without a user session.
 
 ## What is NOT done
 
