@@ -7,6 +7,7 @@
     (pkgs.writeTextDir "lib/systemd/system/user@.service.d/wsl.conf" ''
       [Service]
       Delegate=no
+      DelegateSubgroup=
     '')
   ];
 }
