@@ -14,16 +14,18 @@ shellcheck + tests passing, and Fedora retired.
 Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 0001–0005; architecture shape, glossary and this roadmap written.
 
-## Phase 1 — Prove the substrate on WSL (next)
-
-The single most important step: turn the design from paper into a booting system.
+## Phase 1 — Prove the substrate on WSL ✅ (substantially done 2026-07-24)
 
 - [x] Disk cleanup on the Windows host — 67.5 GB free (2026-07-24).
-- [ ] Install **NixOS-WSL** as a *second* distro, beside the existing Fedora
-      Remix — do not harm Fedora yet.
-- [x] A **minimal `flake.nix`** producing `nixosConfigurations.wsl` — drafted
-      and ready; `nixos-rebuild switch --flake .#wsl` once WSL is installed.
-- **Milestone:** a NixOS-WSL that boots and rebuilds from this flake.
+- [x] NixOS-WSL installed as a second distro beside Fedora Remix.
+- [x] Minimal `flake.nix` producing `nixosConfigurations.wsl`.
+- [x] `hosts/wsl.nix` created — WSL2-specific config; cgroup drop-in in place.
+- [x] `flake.lock` committed — inputs pinned to nixos-26.05.
+- [x] Repo public at `github.com/burnish-studio/hull`; rebuilds from GitHub.
+- [ ] **Known issue:** `user@1000.service` fails at boot with `Result: resources`
+      (WSL2 cgroup executor EBUSY). Cosmetic — no functional impact. Check
+      NixOS-WSL issue tracker before investing more time; see HANDOVER.md.
+- **Milestone:** NixOS-WSL boots and rebuilds from the hull flake. ✅
 
 ## Phase 2 — Module interfaces + the `env` panel
 
