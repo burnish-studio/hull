@@ -14,6 +14,7 @@
       system = "x86_64-linux";
       modules = [
         nixos-wsl.nixosModules.default
+        ./hosts/wsl.nix
         {
           wsl.enable = true;
           wsl.defaultUser = "nixos"; # replaced with registry-injected user in Phase 3
