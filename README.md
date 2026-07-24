@@ -14,7 +14,7 @@ A NixOS flake that produces one reproducible developer environment across two
 host types:
 
 - **`wsl`** — NixOS-WSL, under Windows 11 (the main driver's terminal side).
-- **`laptop`** — native NixOS on a secondary Wayland desktop.
+- **`native`** — NixOS on bare metal (currently a secondary laptop; could be any hardware).
 
 hull holds **no personal identity** — your name, GitHub accounts and keys live in
 a separate private **registry** repo, wired in as a flake input. hull is

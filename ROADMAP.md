@@ -18,12 +18,11 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 
 The single most important step: turn the design from paper into a booting system.
 
-- [ ] Disk cleanup on the Windows host (two WSL distros side-by-side need room).
+- [x] Disk cleanup on the Windows host — 67.5 GB free (2026-07-24).
 - [ ] Install **NixOS-WSL** as a *second* distro, beside the existing Fedora
       Remix — do not harm Fedora yet.
-- [ ] A **minimal `flake.nix`** producing `nixosConfigurations.wsl`, and a first
-      `nixos-rebuild switch --flake .#wsl` that succeeds. Trivial config — the
-      point is to prove the loop, not to be complete.
+- [x] A **minimal `flake.nix`** producing `nixosConfigurations.wsl` — drafted
+      and ready; `nixos-rebuild switch --flake .#wsl` once WSL is installed.
 - **Milestone:** a NixOS-WSL that boots and rebuilds from this flake.
 
 ## Phase 2 — Module interfaces + the `env` panel
@@ -49,8 +48,12 @@ The single most important step: turn the design from paper into a booting system
 ## Phase 4 — The `hull` CLI proper
 
 - [ ] `writeShellApplication` package: the thin wrappers (`switch` / `diff` /
-      `rollback` / `status` / `update`) + the imperative substance (`account`,
-      `doctor`), deps pinned, shellcheck green (ADR 0004).
+      `rollback` / `update`) + the imperative substance (`account`, `doctor`),
+      deps pinned, shellcheck green (ADR 0004).
+- [ ] `hull version` — read-only: current revision, nixpkgs lock date + how far
+      behind channel tip, active generation and host type.
+- [ ] `hull update` — `nix flake update` + `nixos-rebuild switch` in one step;
+      `hull update --check` to preview what would change without applying.
 - [ ] A **fake-`$HOME` test harness** for `account` / `doctor` from the start —
       the only genuinely risky code left.
 - **Milestone:** the `hull` package builds, shellcheck passes, tests pass.
@@ -59,16 +62,16 @@ The single most important step: turn the design from paper into a booting system
 
 - [ ] Port claude config, `AGENTS.md`, statusline from `hull-fedora`, quality-checked.
 
-## Phase 6 — The laptop host (native NixOS)
+## Phase 6 — The native host (bare metal NixOS)
 
-- [ ] Native NixOS install on the (non-precious) laptop; `hosts/laptop.nix` with
+- [ ] Native NixOS install on the (non-precious) machine; `hosts/native.nix` with
       the GUI layer (Wayland, fonts, wezterm).
-- [ ] `hull diff` / `switch` / `doctor` green on the laptop.
+- [ ] `hull diff` / `switch` / `doctor` green on the native host.
 - **Milestone:** both host types green — the host-type seam (axiom C) is proven.
 
 ## Phase 7 — Retire Fedora
 
-- [ ] Once WSL and laptop are both proven, retire the Fedora Remix WSL distro.
+- [ ] Once WSL and native are both proven, retire the Fedora Remix WSL distro.
 - [ ] The Windows-side manual checklist (WezTerm, Hack Nerd Font, `.wezterm.lua`).
 
 ## Open questions to resolve as we go

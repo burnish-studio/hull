@@ -38,7 +38,7 @@ log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
 ## What is decided (see the ADRs for the reasoning)
 
 - **0001** — target **NixOS exclusively**; two host types, both real test cases:
-  `wsl` (NixOS-WSL) and `laptop` (native NixOS). WSL first, laptop once proven.
+  `wsl` (NixOS-WSL) and `native` (NixOS on bare metal). WSL first, native once proven.
 - **0002** — **segmentation**: identity-agnostic, host-type-aware; zero identity
   in the tool (all in the registry); multi-account is baseline; opinions vs
   identity are separate axes; hull never touches Windows.

@@ -11,7 +11,7 @@ This is a glossary only — no implementation detail. Decisions live in
 | **registry** | a *separate private repo* holding **identity** data (name, GitHub accounts, per-host usernames). A flake input to hull. hull holds none of this. |
 | **Opinions** | inherited, fixed configuration — the Kun-derived house style. Impersonal. Lives in hull. |
 | **Identity** | personal data: name, accounts, SSH keys, per-host login. Injected via the registry. Never in hull. |
-| **Host type** | a serviced kind of machine: `wsl` (NixOS-WSL under Windows) or `laptop` (native NixOS desktop). hull is *aware of host type*, not of who you are. |
+| **Host type** | a serviced kind of machine: `wsl` (NixOS-WSL under Windows) or `native` (NixOS on bare metal — laptop, desktop, or any hardware). hull is *aware of host type*, not of who you are. |
 | **Panel** | a sealed concern, expressed as a module: a pure **Generator** + optional **Lifecycle tool**, mounted onto hull via an **Adapter**. Lives in this repo; gets its own repo only when a real second consumer exists (ADR 0003). |
 | **Generator** | a **pure function**: data → config file contents. No side effects, no I/O. E.g. `accounts → gitconfig + ssh config`. Shared by the module adapter and the CLI. |
 | **Adapter** | thin, per-platform glue that mounts a Generator's output — e.g. a Home Manager module wiring it into `programs.git` / `programs.ssh`. |

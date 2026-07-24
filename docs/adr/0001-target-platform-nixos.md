@@ -21,11 +21,11 @@ scope. Two host types are serviced, and both are real test cases:
 
 - **`wsl`** — NixOS-WSL under Windows 11 (the main driver's terminal side). The
   GUI lives on Windows via a manual wrapper; hull never touches Windows.
-- **`laptop`** — native NixOS on the secondary desktop (real Wayland / hardware).
+- **`native`** — NixOS on bare metal (real Wayland / hardware; currently a secondary laptop, but the label is hardware-agnostic).
 
 Target platform is decoupled from migration schedule: stand NixOS-WSL up *beside*
 the current Fedora Remix and retire it once proven (WSL first — cheapest to
-stand up); migrate the laptop once the design is proven there (its state is
+stand up); migrate the native host once the design is proven there (its state is
 non-precious, so the remaining risk is technical, not data-loss).
 
 ## Consequences
@@ -47,6 +47,6 @@ non-precious, so the remaining risk is technical, not data-loss).
 - **Stay on Fedora + Home Manager (v1's approach).** Rejected: keeps the
   foreign-host imperative layer that produced nearly all the bugs, for no benefit
   now that full NixOS is on the table.
-- **NixOS on the laptop only; keep WSL on Fedora + HM.** Rejected: leaves two
+- **NixOS on the native host only; keep WSL on Fedora + HM.** Rejected: leaves two
   substrates to maintain and never proves the NixOS-WSL host type — which is the
   main driver.

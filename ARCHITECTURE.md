@@ -11,11 +11,11 @@ host types. This file is the **shape**; the *why* of each choice is in
 
 ```
 flake.nix          inputs (nixpkgs, home-manager, nixos-wsl, registry);
-                   outputs: nixosConfigurations.{wsl,laptop}, packages.hull
+                   outputs: nixosConfigurations.{wsl,native}, packages.hull
 hosts/
   wsl.nix          host type: NixOS-WSL (no GUI; the Windows wrapper stays
                    manual / out-of-tree — hull never touches Windows)
-  laptop.nix       host type: native desktop (Wayland, fonts, GUI)
+  native.nix       host type: NixOS on bare metal (Wayland, fonts, GUI)
 modules/           the panels — each a sealed concern with a small typed interface
   env/             the ship's body: zsh, neovim, wezterm, CLI tools, herdr, starship
   git-identity/    Generator (accounts → gitconfig/ssh) + its Home Manager adapter;
@@ -34,7 +34,7 @@ input.
 
 - **Host-type variation lives at the host layer** (not inside the concern
   modules). Concern modules are host-agnostic and expose options; each host file
-  imports the concerns it wants and sets their options (e.g. only `laptop` pulls
+  imports the concerns it wants and sets their options (e.g. only `native` pulls
   in the GUI parts). Axiom C (host-type-aware, ADR 0002) is satisfied in exactly
   one place, rather than smeared as `if wsl then …` through every concern.
 - **Panels are sealed modules, not separate repos** (ADR 0003). One flake, one
