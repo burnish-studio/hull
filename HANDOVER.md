@@ -90,14 +90,28 @@ required cgroup context.
 tools work correctly. No user-level systemd services are needed for our WSL
 dev environment.
 
-**Relevant issues found (start here Monday):**
-- https://github.com/nix-community/NixOS-WSL/issues/888 — NixOS-WSL issue
-  tracking this exact symptom.
-- https://github.com/microsoft/WSL/issues/13826#issuecomment-3996921259 — the
-  underlying WSL2 kernel issue.
-Research these first; a fix or workaround may already be documented. If it's a
-known WSL2 kernel limitation with no clean fix, document it and move on — the
-system is fully functional without a user session.
+**Root cause (researched 2026-07-24):** This is an upstream WSL2 bug
+(labelled as such by NixOS-WSL maintainers). It occurs specifically when
+another WSL distro (Fedora Remix) is already running when NixOS is opened.
+WSL's shell wrapper detects that `SIGCHLD` is being ignored (inherited from
+the already-running distro context) and skips user session setup. We saw this
+directly in our logs: `shell-wrapper: SIGCHLD is ignored, skipping setting
+environment`. There is no NixOS-level fix — it's in the WSL interop layer.
+
+**Workaround:** terminate Fedora before opening NixOS:
+```powershell
+wsl --terminate fedoraremix
+```
+Then open NixOS — the user session starts cleanly. The problem disappears
+entirely once Fedora is retired in Phase 7.
+
+**The `hosts/wsl.nix` drop-in** (`Delegate=no`, `DelegateSubgroup=`) can be
+removed if it proves unnecessary once the SIGCHLD issue is understood. It does
+no harm but may not be the right fix.
+
+**Relevant issues:**
+- https://github.com/nix-community/NixOS-WSL/issues/888
+- https://github.com/microsoft/WSL/issues/13826#issuecomment-3996921259
 
 ## What is NOT done
 
