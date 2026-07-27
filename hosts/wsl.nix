@@ -1,6 +1,6 @@
 # Host type: NixOS-WSL. No GUI — the Windows-side wrapper (WezTerm, fonts)
 # stays manual and out-of-tree; hull never touches Windows.
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, unstable, ... }:
 {
   wsl.enable = true;
   wsl.defaultUser = "nixos"; # replaced with the registry-injected user in Phase 3
@@ -16,14 +16,13 @@
   # Already a declared runtime dep of `hull account add` (ADR 0004), so this is
   # pulling a known-needed tool forward, not a new dependency.
   # claude-code: hull is developed on the machine it configures. Temporary home —
-  # this moves into the `agents` panel in Phase 5. Note the Nix-installed binary
-  # cannot self-update; it is pinned to whatever nixos-26.05 carries.
-  environment.systemPackages = with pkgs; [ git gh claude-code ];
-
-  # claude-code is unfree. Allow it by name rather than setting allowUnfree
-  # globally, so every unfree package stays an explicit, visible decision.
-  nixpkgs.config.allowUnfreePredicate =
-    pkg: builtins.elem (lib.getName pkg) [ "claude-code" ];
+  # this moves into the `agents` panel in Phase 5.
+  # Taken from `unstable`, not the 26.05 pin: a Nix-installed binary cannot
+  # self-update, and Claude Code ships often enough that the release branch goes
+  # stale in weeks (26.05 had 2.1.187 while unstable had 2.1.220 — old enough to
+  # not list the current models). Unstable still lags upstream somewhat; that is
+  # accepted. It is the only package taken from unstable — see flake.nix.
+  environment.systemPackages = [ pkgs.git pkgs.gh unstable.claude-code ];
 
   # --- Disk hygiene (ADR 0006) -------------------------------------------------
   # WSL gives the guest a ~1 TB sparse filesystem on a 474 GB physical disk, so it
