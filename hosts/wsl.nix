@@ -12,10 +12,13 @@
 
   # git: clone hull locally so rebuilds run from a path, not the GitHub fetcher
   # (which can serve a stale commit — see HANDOVER, rebuild workflow).
+  # gh: authentication for the private `hull-fedora` quarry and for pushing.
+  # Already a declared runtime dep of `hull account add` (ADR 0004), so this is
+  # pulling a known-needed tool forward, not a new dependency.
   # claude-code: hull is developed on the machine it configures. Temporary home —
   # this moves into the `agents` panel in Phase 5. Note the Nix-installed binary
   # cannot self-update; it is pinned to whatever nixos-26.05 carries.
-  environment.systemPackages = with pkgs; [ git claude-code ];
+  environment.systemPackages = with pkgs; [ git gh claude-code ];
 
   # claude-code is unfree. Allow it by name rather than setting allowUnfree
   # globally, so every unfree package stays an explicit, visible decision.

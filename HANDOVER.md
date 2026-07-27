@@ -75,13 +75,39 @@ log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
 hull is developed **on the machine it configures**. `git` and `claude-code` are
 installed, so nothing needs bootstrapping any more.
 
-**First-time setup on the NixOS side** (HTTPS, not SSH — no SSH identity exists
-there until Phase 3):
+**First-time setup on the NixOS side.** `hull` is **public** (clones with no
+auth); `hull-fedora` is **private**, so it needs authentication:
 
 ```bash
-git clone https://github.com/burnish-studio/hull ~/hull
+git clone https://github.com/burnish-studio/hull ~/hull      # works immediately
+gh auth login                                                # burnish-studio account, HTTPS
 git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora   # read-only quarry
 ```
+
+`gh auth login` also installs a git credential helper, so HTTPS push works — no
+SSH key needed yet.
+
+### Authentication: what is declarative and what is not
+
+Three separate things, and conflating them is how v1 went wrong:
+
+| | Where it lives | When |
+| --- | --- | --- |
+| the **tool** (`gh`, `git`) | declarative, `hosts/wsl.nix` | done |
+| the **credential** (token / SSH key) | per-machine secret, **never in Nix or git** | now, imperatively, by design |
+| the **routing** (which account for which repo) | declarative, generated from the registry | Phase 3 |
+
+So authenticating by hand now is *not* a violation — the roadmap already states
+that keys stay per-machine and are never in Nix. What must not be hand-built is the
+**routing**: no hand-written `~/.ssh/config` aliases, no hand-edited gitconfig
+`includeIf` rules. Phase 3 generates those from the registry, and hand-made
+versions would be regenerated (or worse, silently conflict).
+
+**One account is enough for now.** Phase 2 only touches `hull` and `hull-fedora`,
+both under `burnish-studio`. The second account matters when Phase 3 tests
+multi-account routing. Expect Phase 3 to switch these remotes from HTTPS to the
+SSH-alias form (`git@github-burnish:…`), as on the Fedora side — that is the
+declarative routing arriving, not a mistake being corrected.
 
 **Normal rebuild — always from the local path:**
 ```bash
