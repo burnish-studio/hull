@@ -40,16 +40,20 @@ starship, the git-identity logic, agent settings) and read the fuller metaphor
 (`ARCHITECTURE.md` §1–7) and v1's decisions (`.plan/DECISIONS.md`, the `D1..`
 log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
 
-## Current system state (2026-07-24)
+## Current system state (2026-07-27)
 
 - **NixOS-WSL is installed** as a second WSL distro alongside Fedora Remix.
   Launch via Windows Terminal (NixOS tab) or `wsl -d NixOS` in PowerShell.
 - **Hull flake is live**: `nixos-rebuild switch --flake github:burnish-studio/hull#wsl`
   drives the system. The repo is public at `github.com/burnish-studio/hull`.
+- **`git` and `claude-code` are on the machine** (verified: `git` 2.54.0,
+  `claude-code` 2.1.187). **hull is now developed from inside NixOS**, not from
+  the Fedora side — see "Working from NixOS" below.
 - **Current user**: `nixos` (placeholder — replaced with the real user via the
   registry in Phase 3).
-- **`hosts/wsl.nix` exists** and holds the host-type config (`wsl.enable`,
-  `wsl.defaultUser`, `stateVersion`, flakes, `git`) — no workarounds.
+- **`hosts/wsl.nix`** holds the whole host config in five settings —
+  `wsl.enable`, `wsl.defaultUser`, flakes, packages, the unfree predicate,
+  `stateVersion`. No workarounds.
 - **`flake.lock` is committed.** Both inputs track the **26.05 release line**:
   nixpkgs on `nixos-26.05` (the Hydra-tested channel branch — binaries are in the
   cache; `release-26.05` is the raw one and would mean source builds) and
@@ -84,6 +88,35 @@ sudo nixos-rebuild switch --flake ~/hull#wsl
 ```
 Rebuilding from a local path removes the stale-commit class of failure entirely,
 and lets you test uncommitted changes.
+
+## Working from NixOS (as of 2026-07-27)
+
+hull is developed **on the machine it configures**. Both repos are cloned on the
+NixOS side over HTTPS (no SSH identity exists there until Phase 3):
+
+```bash
+git clone https://github.com/burnish-studio/hull ~/hull
+git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora   # read-only quarry
+sudo nixos-rebuild switch --flake ~/hull#wsl                            # local path, not GitHub
+```
+
+**Division of labour:** the agent edits, and runs `nix flake check`,
+`nix build --dry-run` and `nixos-rebuild build` freely — all non-destructive. The
+captain runs `nixos-rebuild switch` and makes the experiential calls.
+
+**Gate before handing over a change:** `nix build --dry-run
+.#nixosConfigurations.wsl.config.system.build.toplevel`. `nix flake check` is
+*not* sufficient — it proves the config is well-formed but does not force package
+derivations, so it misses unfree-licence and missing-package errors. This was
+learned the hard way: `claude-code` was pushed in a state that failed to build
+because only `flake check` had been run.
+
+**Gotcha: flakes only see git-tracked files.** A new module is invisible until
+`git add`ed. Committing is not required; staging is. The error reads "file does
+not exist", which is misleading.
+
+**Expect the `user@1000` exit 4 on every rebuild while Fedora runs.** It is the
+documented upstream bug, not a regression. The fix is to stop starting Fedora.
 
 ## Disk and generations (policy decided 2026-07-27)
 
