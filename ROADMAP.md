@@ -48,6 +48,26 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 
 ## Phase 3 — The `git-identity` panel
 
+**Carry-forward constraints from v1 — do not rediscover these** (`hull-fedora/.plan/DECISIONS.md`):
+
+- **D1.3 — SSH must go over `ssh.github.com:443`, unconditionally.** Port 22 is
+  firewalled on the captain's work network; a plain `git@github.com:` remote times
+  out there. Make 443 universal rather than conditional, so there is no failure
+  mode that only appears at the office.
+- **D1.5 — canonical org-based naming.** Aliases `github-burnish` /
+  `github-flintec`; keys `id_ed25519_burnish` / `id_ed25519_flintec`. Org names
+  scale to a third account; "personal/work" does not.
+- **hull generates ssh *config*, never key material.** Keypairs are per-machine,
+  created by `hull account add`, never in Nix or git.
+- **D1.4 — keep `gh auth git-credential`** as the fallback for third-party HTTPS
+  repos, but nothing load-bearing should depend on which gh account is active.
+- **D3.2 — accounts live in a committed `profile.nix`**, not a gitignored one:
+  flakes cannot see untracked files.
+
+**Interim state (2026-07-27):** NixOS authenticates via `gh auth login` over HTTPS
+only. No SSH key, no `~/.ssh/config`, no gitconfig `includeIf` on that machine —
+deliberately, so Phase 3 builds them rather than reconciling hand-made versions.
+
 - [ ] The **Generator** as a pure function in `lib/` (accounts → gitconfig +
       ssh config + repo helpers), with unit tests.
 - [ ] The Home Manager **adapter** wiring it into `programs.git` / `programs.ssh`.
