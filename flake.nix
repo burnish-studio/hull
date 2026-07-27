@@ -3,8 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    # Track the release branch matching nixpkgs, not `main` — `main` drifts into
+    # the next release's development while nixpkgs stays on 26.05. The ref is the
+    # update policy; flake.lock supplies the reproducibility.
     nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/main";
+      url = "github:nix-community/NixOS-WSL/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -15,11 +18,6 @@
       modules = [
         nixos-wsl.nixosModules.default
         ./hosts/wsl.nix
-        {
-          wsl.enable = true;
-          wsl.defaultUser = "nixos"; # replaced with registry-injected user in Phase 3
-          system.stateVersion = "26.05";
-        }
       ];
     };
   };
