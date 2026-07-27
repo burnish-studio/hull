@@ -75,17 +75,28 @@ log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
 hull is developed **on the machine it configures**. `git` and `claude-code` are
 installed, so nothing needs bootstrapping any more.
 
-**First-time setup on the NixOS side.** `hull` is **public** (clones with no
-auth); `hull-fedora` is **private**, so it needs authentication:
+**Setup is done (2026-07-27).** `~/hull` and `~/hull-fedora` are both cloned, and
+`gh` is authenticated as **burnish-studio** over HTTPS with the git credential
+helper configured, so push works without an SSH key. `hull` is public;
+`hull-fedora` is private, which is why `gh auth` is needed for the quarry.
 
+To reproduce on a fresh machine:
 ```bash
-git clone https://github.com/burnish-studio/hull ~/hull      # works immediately
-gh auth login                                                # burnish-studio account, HTTPS
-git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora   # read-only quarry
+git clone https://github.com/burnish-studio/hull ~/hull      # public, no auth
+gh auth login                                                # burnish-studio, HTTPS
+git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora
 ```
 
-`gh auth login` also installs a git credential helper, so HTTPS push works — no
-SSH key needed yet.
+**Two known papercuts, neither blocking:**
+- `gh` warns *"Authentication credentials saved in plain text"* — the token sits
+  unencrypted in `~/.config/gh/hosts.yml`. gh would use a secret service instead,
+  but that needs a working user D-Bus session, which is exactly what the
+  `user@1000` bug breaks. Acceptable for now (per-machine secret state, never in
+  git); revisit if a keyring becomes available after Fedora retires.
+- `gh auth login` cannot open a browser: `xdg-open,x-www-browser,wslview` not in
+  PATH. Paste the URL manually. Fixing it properly would mean `wslu`/`wslview`,
+  which shells out to Windows and so brushes the "hull never touches Windows"
+  boundary — not worth an exception for a convenience.
 
 ### Authentication: what is declarative and what is not
 
@@ -148,10 +159,9 @@ documented upstream bug, not a regression. The fix is to stop starting Fedora.
 however it was invoked. `auto-optimise-store` dedupes continuously. See ADR 0006
 for the full reasoning; do not replace either with a timer.
 
-> ⚠️ **Not yet applied to the running machine.** The live system was built from
-> `eb0bbbb`, which predates the disk-hygiene commit (`d3629ab`). The cap and
-> `auto-optimise-store` take effect on the **next** `nixos-rebuild switch`. Until
-> then generations are uncapped.
+**Verified live 2026-07-27.** After two rebuilds the profile holds exactly three
+generations (6, 7, 8), the activation cap having dropped the older ones
+unattended. The mechanism is confirmed by observation, not only by evaluation.
 
 Reclaim (the slow part) is still manual until `hull switch` owns it in Phase 4:
 
@@ -388,15 +398,8 @@ housekeeping rebuild above, then confirm `nix build --dry-run` works from `~/hul
 
 Phase 1 is closed; nothing gates this.
 
-**First, one housekeeping rebuild** (from inside NixOS) to apply the disk-hygiene
-config, which the live system predates:
-
-```bash
-sudo nixos-rebuild switch --flake ~/hull#wsl
-ls -l /nix/var/nix/profiles/     # expect at most 3 generations afterwards
-```
-
-Then:
+Environment is ready: repos cloned, `gh` authenticated, disk hygiene live and
+verified. Start straight in.
 
 1. **Design the `env` panel interface** — what options does it expose?
    Start with zsh (shell, plugins, prompt via starship) as the first module.
