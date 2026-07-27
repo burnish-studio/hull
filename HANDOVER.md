@@ -120,12 +120,14 @@ documented upstream bug, not a regression. The fix is to stop starting Fedora.
 
 ## Disk and generations (policy decided 2026-07-27)
 
-**Keep 3 system generations, capped at rebuild time.** Not automated yet — it
-lands in `hull switch` in Phase 4 (see ROADMAP). Until then, run it by hand after
-a rebuild:
+**Keep 3 system generations. Now automatic** — `hosts/wsl.nix` caps them in
+`system.activationScripts`, so every `nixos-rebuild switch` enforces the ceiling
+however it was invoked. `auto-optimise-store` dedupes continuously. See ADR 0006
+for the full reasoning; do not replace either with a timer.
+
+Reclaim (the slow part) is still manual until `hull switch` owns it in Phase 4:
 
 ```bash
-sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +3
 sudo nix-collect-garbage
 ```
 
@@ -178,6 +180,10 @@ manual Windows checklist alongside WezTerm and fonts — hull never touches Wind
   second consumer; registry is the data-exception.
 - **0004** — **CLI**: thin wrappers + imperative substance; `writeShellApplication`.
 - **0005** — clean-start rewrite; v1 frozen as `hull-fedora`.
+- **0006** — **disk hygiene is event-driven on WSL**: the guest sees a fake ~1 TB
+  of free space so pressure-driven GC never fires, and the virtual disk never
+  shrinks. Cap generations at activation, dedupe continuously, reclaim in the CLI.
+  Not inherited by `native`.
 
 ## Known issue: `user@1000.service` fails — one root cause, three symptoms
 

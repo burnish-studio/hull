@@ -68,13 +68,17 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
       `hull update --check` to preview what would change without applying.
 - [ ] A **fake-`$HOME` test harness** for `account` / `doctor` from the start —
       the only genuinely risky code left.
-- [ ] **`hull switch` caps generations as part of the rebuild** — switch, then
-      `nix-env -p /nix/var/nix/profiles/system --delete-generations +3`, then
-      `nix-collect-garbage`. Decided 2026-07-27: the rebuild is the only thing
-      that creates generations, so it is the correct trigger. A scheduled timer
-      was considered and rejected — it bounds the average, not the peak, and on
-      WSL the peak is what permanently costs Windows disk (the virtual disk grows
-      but never shrinks). Steady state 3 generations, transient peak 4.
+- [ ] **Disk hygiene, layer 3 (ADR 0006).** Layers 1–2 are already live in
+      `hosts/wsl.nix` (generation cap at activation, `auto-optimise-store`). The
+      CLI owns reclaim and visibility:
+      - `hull switch` — `nix-collect-garbage` after switching.
+      - `hull update` — collect after `nix flake update`; that is the single
+        largest growth event (~468 MB per nixpkgs revision, plus everything
+        rebuilt against it).
+      - `hull doctor` — report store size and generation count, and state plainly
+        that the guest's free-space figure is meaningless on WSL. It must
+        contradict `df`, not repeat it. The virtual disk size is not readable from
+        inside the guest, so point at Windows rather than guess.
 - **Milestone:** the `hull` package builds, shellcheck passes, tests pass.
 
 ## Phase 5 — The `agents` panel
@@ -85,6 +89,10 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 
 - [ ] Native NixOS install on the (non-precious) machine; `hosts/native.nix` with
       the GUI layer (Wayland, fonts, wezterm).
+- [ ] **Do not copy the WSL disk-hygiene block** (ADR 0006). On a real disk,
+      pressure-driven `nix.settings.min-free` / `max-free` is the correct mechanism
+      and the activation-time cap is unnecessary. This is the host-type seam doing
+      its job — the difference stays at the host layer.
 - [ ] `hull diff` / `switch` / `doctor` green on the native host.
 - **Milestone:** both host types green — the host-type seam (axiom C) is proven.
 
