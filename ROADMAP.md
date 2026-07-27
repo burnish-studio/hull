@@ -25,13 +25,16 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 - [x] Flakes declared in-config; `git` added so hull can be cloned and rebuilt
       from a local path (kills the stale-GitHub-commit failure mode).
 - [x] Repo public at `github.com/burnish-studio/hull`; rebuilds from GitHub.
-- [x] User session failure diagnosed as an **upstream WSL2 interop bug** (not
-      cgroup delegation); the non-working drop-in removed 2026-07-27. See
-      HANDOVER.md.
-- [ ] **Verify the zero-error baseline:** with Fedora terminated, boot and
-      `nixos-rebuild switch` must both be completely clean — no warnings, exit 0.
-      A brand-new NixOS-WSL instance should have no errors; anything remaining on
-      a clean start is ours and outranks Phase 2.
+- [x] User session failure re-diagnosed 2026-07-27: root cause is
+      `Failed to spawn executor: Device or resource busy` from `systemd[1]`; the
+      WSL banner, the dbus error and exit 4 are all downstream of it. Upstream
+      and unfixed (Microsoft closed WSL #40590 as not planned). Cosmetic — the
+      manager is in fact running. Cgroup delegation and the SIGCHLD theory are
+      both ruled out; the drop-in is removed. See HANDOVER.md.
+- [ ] **Final test:** with Fedora terminated, open NixOS twice and check
+      `systemctl --failed`. Clean → accept as the multi-distro upstream bug,
+      gone when Fedora retires in Phase 7, proceed to Phase 2. Still failing →
+      the correlation is wrong for us and it needs a fresh look first.
 - **Milestone:** NixOS-WSL boots and rebuilds from the hull flake. ✅
 
 ## Phase 2 — Module interfaces + the `env` panel

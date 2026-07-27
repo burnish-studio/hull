@@ -89,47 +89,70 @@ and lets you test uncommitted changes.
 - **0004** — **CLI**: thin wrappers + imperative substance; `writeShellApplication`.
 - **0005** — clean-start rewrite; v1 frozen as `hull-fedora`.
 
-## Known issue: user session fails at boot and during rebuild
+## Known issue: `user@1000.service` fails — one root cause, three symptoms
 
-**Symptom:** On WSL boot: `wsl: Failed to start the systemd user session for
-'nixos'`. On `nixos-rebuild switch`: `warning: user activation for nixos failed`
-(exit code 4).
+Accurate as of **2026-07-27**. This section supersedes the 2026-07-24 diagnosis,
+which was wrong about the mechanism (see "Ruled out" below).
 
-**Cause (researched 2026-07-24):** an upstream **WSL2 interop bug**, labelled as
-such by the NixOS-WSL maintainers. It fires only when another WSL distro (Fedora
-Remix) is already running when NixOS is opened: WSL's shell wrapper sees that
-`SIGCHLD` is being ignored — inherited from the running distro's context — and
-skips user session setup. Our own logs showed it directly: `shell-wrapper:
-SIGCHLD is ignored, skipping setting environment`. Downstream of that,
-`user@1000.service` fails with `Result: resources` / `Failed to spawn executor:
-Device or resource busy`. **There is no NixOS-level fix** — the defect is in the
-WSL interop layer, above anything hull controls.
+**The three symptoms are all one bug:**
+1. On WSL boot: `wsl: Failed to start the systemd user session for 'nixos'`.
+2. On `nixos-rebuild switch`: `Failed to open dbus connection` → `Unable to
+   autolaunch a dbus-daemon without a $DISPLAY for X11` → `warning: user
+   activation for nixos failed`, exit code 4.
+3. `systemctl --failed` lists `user@1000.service`.
 
-**Workaround:** terminate Fedora before opening NixOS:
-```powershell
-wsl --terminate fedoraremix
+**The actual root cause**, from the journal (`systemd[1]`, not WSL):
 ```
-The problem disappears entirely once Fedora is retired in Phase 7.
+systemd[1]: user@1000.service: Failed to spawn executor: Device or resource busy
+systemd[1]: user@1000.service: Failed to spawn 'start' task: Device or resource busy
+systemd[1]: user@1000.service: Failed with result 'resources'.
+```
+The chain: systemd cannot spawn the user manager's executor (cgroup-level EBUSY)
+→ no user D-Bus socket at `/run/user/1000/bus` → `nixos-rebuild`'s "reloading
+user units" step cannot connect → exit 4. WSL's banner is a *downstream report*:
+it runs `systemctl is-active user@1000.service`, sees `failed`, and prints.
 
-**What we tried and removed (2026-07-27):** a `systemd.packages` drop-in on
-`user@.service` setting `Delegate=no` / `DelegateSubgroup=`, on the theory that
-cgroup delegation was the cause. The drop-in loaded correctly (confirmed via
-`systemctl cat`) but the failure persisted — cgroup delegation was *not* the
-cause. **The drop-in has been deleted** rather than left in place: a fix that
-provably does not fix anything is cruft, and it misattributes an upstream bug to
-our config. `hosts/wsl.nix` is now stock host configuration only. Do not
-reintroduce a systemd workaround for this symptom without first reproducing it
-on a clean start (Fedora terminated).
+**Impact is cosmetic.** Despite the `failed` state the manager is actually
+running — `systemctl status` shows ~19 tasks in a populated cgroup, and
+`loginctl list-sessions` shows an active session. Nothing has malfunctioned.
+
+**Ruled out (do not re-investigate these):**
+- **cgroup delegation.** A `systemd.packages` drop-in setting `Delegate=no` /
+  `DelegateSubgroup=` was added 2026-07-24 and **removed 2026-07-27**. The
+  failure persists on a cold NixOS restart with stock delegation restored
+  (`Delegate=pids memory cpu`, `DelegateSubgroup=init.scope`). Do not re-add it.
+- **The SIGCHLD / shell-wrapper theory** (the 2026-07-24 claim). The journal
+  timeline refutes it: `systemd[1]` fails at `:02`; the WSL interop error and
+  `shell-wrapper: SIGCHLD is ignored` both appear at `:03`, *after*. SIGCHLD is a
+  separate cosmetic message about environment setup, not the cause.
+
+**It is genuinely upstream, and unfixed.** The same message is reported across
+Ubuntu 24.04/26.04, Arch, AlmaLinux and NixOS on WSL 2.6.1.0–2.7.3.0. Microsoft
+closed WSL #40590 (2.7.3.0, Ubuntu 26.04) as **"not planned"**. Note our journal
+evidence is *more specific* than any upstream report — none of them diagnose the
+cgroup layer. Two independent sources correlate it with **another WSL distro
+already running**: NixOS-WSL #888 (labelled `upstream-bug`) and WSL #40590, where
+it fails "when launching multiple instances sequentially" (`vm_4` fails, `vm_3`
+succeeds, identical configs). Intermittency is characteristic — repeat any test
+at least twice before believing the result.
 
 **Relevant issues:**
 - https://github.com/nix-community/NixOS-WSL/issues/888
+- https://github.com/microsoft/WSL/issues/40590 (closed, not planned)
+- https://github.com/microsoft/WSL/issues/13564
 - https://github.com/microsoft/WSL/issues/13826#issuecomment-3996921259
 
-**Open verification (next session, captain-driven):** confirm that with Fedora
-terminated the boot and `nixos-rebuild switch` are both **completely clean** — no
-warnings, exit 0. That is the "brand-new NixOS-WSL has zero errors" baseline we
-want before building Phase 2 on top of it. If anything still errors on a clean
-start, it is *our* problem and takes priority over Phase 2.
+**Open test (captain-driven):** with **Fedora terminated**, open NixOS and check
+`systemctl --failed` and whether the banner appears; twice. If clean, this is
+confirmed as the multi-distro upstream bug and it disappears when Fedora is
+retired in Phase 7 — accept it and proceed to Phase 2. If it *still* fails with
+nothing else running, the multi-distro correlation is wrong for our case and it
+needs a fresh look before Phase 2.
+
+**Constraint this places on Phase 2:** while `user@1000` is down, **no Home
+Manager `systemd.user` service will start.** File-based config (zsh, neovim, git,
+starship) is unaffected. Design the `env` panel to avoid user services on WSL
+rather than discovering this later.
 
 ## What is NOT done
 
