@@ -140,15 +140,33 @@ same nixpkgs revision differ only by what changed. Note the store also holds eve
 nixpkgs revision ever fetched (~468 MB each), which only `nix-collect-garbage`
 clears — so "3 generations" is not the whole footprint.
 
+**Measured 2026-07-27 — keep this in proportion.** NixOS: 8.0 GB used, 7.8 GB of
+that the store, virtual disk 9.04 GB (≈1 GB overhead, so nothing meaningful is
+trapped and **compaction is not currently needed**). Fedora's virtual disk:
+**78.47 GB** — 8.7× the entire NixOS system.
+
+So the generation cap is correct design but a **minor** disk lever today; it earns
+its keep once Phase 2 adds neovim, node and the rest. **The real disk win is
+retiring Fedora (~78 GB), which also permanently silences the `user@1000`
+failure.** Do not spend effort on store micro-management while that 78 GB is
+outstanding.
+
+Measure with `df -h /` and `du -sh /nix/store` on NixOS; list generations with
+`ls -l /nix/var/nix/profiles/` (`nix-env -p` needs root even to read). Virtual disk
+sizes are visible from Windows by walking
+`HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss` for each distro's
+`BasePath\ext4.vhdx` — unverified beyond the one run above.
+
 **Losing old generations costs time, not recoverability** — hull is in git, so any
 past system can be rebuilt from any commit. Generations only buy *instant*
 rollback. Hence 3 rather than 10.
 
-**One-time reclaim (Windows-side, manual):** the virtual disk is already at its
-high-water mark, so capping only bounds future growth. To return the existing
-space to Windows: cap, garbage-collect, then compact the disk from Windows. Per
-hull's boundaries that compaction stays on the manual Windows checklist alongside
-WezTerm and fonts — hull never touches Windows.
+**If reclaim is ever needed** (not now — see the measurements above): a WSL virtual
+disk grows but never shrinks, so freeing space inside NixOS does not return it to
+Windows. The sequence is cap, garbage-collect, then compact from Windows
+(`wsl --manage <distro> --set-sparse true` on recent WSL, otherwise
+`diskpart`/`Optimize-VHD`). Per hull's boundaries that compaction stays on the
+manual Windows checklist alongside WezTerm and fonts — hull never touches Windows.
 
 ## What is decided (see the ADRs for the reasoning)
 

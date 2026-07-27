@@ -90,7 +90,15 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 
 ## Phase 7 — Retire Fedora
 
-- [ ] Once WSL and native are both proven, retire the Fedora Remix WSL distro.
+**Worth pulling forward.** Measured 2026-07-27: Fedora's virtual disk is **78.47 GB**
+against NixOS's 9.04 GB, and running Fedora is also the trigger for the
+`user@1000` failure (see HANDOVER). Retiring it is one action that reclaims ~78 GB
+*and* removes the only error left on the machine — a bigger win than anything in
+Phases 2–6. Nothing blocks it now that `claude-code` runs on NixOS; the
+`hull-fedora` reference lives on GitHub, so the distro is not the quarry.
+
+- [ ] Stop launching Fedora (immediate — no prerequisites).
+- [ ] Once WSL and native are both proven, delete the Fedora Remix WSL distro.
 - [ ] The Windows-side manual checklist (WezTerm, Hack Nerd Font, `.wezterm.lua`).
 
 ## Open questions to resolve as we go
