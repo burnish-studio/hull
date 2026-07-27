@@ -14,7 +14,7 @@ shellcheck + tests passing, and Fedora retired.
 Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 0001–0005; architecture shape, glossary and this roadmap written.
 
-## Phase 1 — Prove the substrate on WSL ✅ (substantially done 2026-07-24)
+## Phase 1 — Prove the substrate on WSL ✅ (done 2026-07-27)
 
 - [x] Disk cleanup on the Windows host — 67.5 GB free (2026-07-24).
 - [x] NixOS-WSL installed as a second distro beside Fedora Remix.
@@ -31,10 +31,10 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
       and unfixed (Microsoft closed WSL #40590 as not planned). Cosmetic — the
       manager is in fact running. Cgroup delegation and the SIGCHLD theory are
       both ruled out; the drop-in is removed. See HANDOVER.md.
-- [ ] **Final test:** with Fedora terminated, open NixOS twice and check
-      `systemctl --failed`. Clean → accept as the multi-distro upstream bug,
-      gone when Fedora retires in Phase 7, proceed to Phase 2. Still failing →
-      the correlation is wrong for us and it needs a fresh look first.
+- [x] **Zero-error baseline confirmed** (2026-07-27): with the other distro
+      terminated, NixOS opens twice with no banner, `systemctl --failed` empty,
+      and `nixos-rebuild switch` finishes `Done.` at exit 0. Trigger is a second
+      WSL distro running; it retires with Fedora in Phase 7.
 - **Milestone:** NixOS-WSL boots and rebuilds from the hull flake. ✅
 
 ## Phase 2 — Module interfaces + the `env` panel

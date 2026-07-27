@@ -4,8 +4,12 @@ Accurate as of **2026-07-24**, end of the Phase 1 session.
 
 ## One-line state
 
-Phase 1 is **substantially complete**: NixOS-WSL is installed, boots, and rebuilds
-from the hull flake on GitHub. One known issue remains (user session — see below).
+Phase 1 is **complete**. NixOS-WSL installs, boots and rebuilds from the hull
+flake with **zero errors and exit 0**, verified 2026-07-27 with the other WSL
+distro terminated. The user-session failure was traced to an upstream WSL bug
+triggered by a second distro running — not hull's config — and is documented
+below with an operating rule until Fedora retires in Phase 7.
+
 The immediate next step is Phase 2: the `env` panel and module interfaces.
 
 ## Read order
@@ -142,17 +146,28 @@ at least twice before believing the result.
 - https://github.com/microsoft/WSL/issues/13564
 - https://github.com/microsoft/WSL/issues/13826#issuecomment-3996921259
 
-**Open test (captain-driven):** with **Fedora terminated**, open NixOS and check
-`systemctl --failed` and whether the banner appears; twice. If clean, this is
-confirmed as the multi-distro upstream bug and it disappears when Fedora is
-retired in Phase 7 — accept it and proceed to Phase 2. If it *still* fails with
-nothing else running, the multi-distro correlation is wrong for our case and it
-needs a fresh look before Phase 2.
+**CONFIRMED 2026-07-27.** With **both distros terminated** and NixOS opened alone,
+twice: no banner, `systemctl --failed` → `0 loaded units listed`, and
+`nixos-rebuild switch` completes with `Done.` — no warning, exit 0. The rebuild's
+user-unit step now works (`restarting the following user units:
+nixos-activation.service`), which is the direct proof of the causal chain: kill
+the trigger and all three symptoms clear together.
 
-**Constraint this places on Phase 2:** while `user@1000` is down, **no Home
-Manager `systemd.user` service will start.** File-based config (zsh, neovim, git,
-starship) is unaffected. Design the `env` panel to avoid user services on WSL
-rather than discovering this later.
+**So: hull's config is clean. The trigger is a second WSL distro running.**
+
+**Operating rule until Phase 7:** terminate the other distro before opening NixOS.
+```powershell
+wsl --terminate fedoraremix
+wsl --terminate NixOS     # so NixOS cold-boots with Fedora already gone
+```
+Terminating NixOS too matters — resuming a NixOS session that *started* while
+Fedora was up keeps the failed unit. If you see the banner, this is why; it is not
+a regression in hull. The problem disappears permanently when Fedora retires.
+
+**Constraint this places on Phase 2:** `systemd.user` services work on a clean
+start, but will fail on any boot where Fedora was running. Until Phase 7, do not
+make the `env` panel *depend* on Home Manager user services. File-based config
+(zsh, neovim, git, starship) is unaffected either way — prefer it.
 
 ## What is NOT done
 
