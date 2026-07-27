@@ -59,12 +59,19 @@ log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
 - **`hosts/wsl.nix`** holds the whole host config in five settings —
   `wsl.enable`, `wsl.defaultUser`, flakes, packages, the unfree predicate,
   `stateVersion`. No workarounds.
-- **`flake.lock` is committed.** Both inputs track the **26.05 release line**:
+- **`flake.lock` is committed.** There are **three inputs**. Two track the
+  **26.05 release line**:
   nixpkgs on `nixos-26.05` (the Hydra-tested channel branch — binaries are in the
   cache; `release-26.05` is the raw one and would mean source builds) and
   nixos-wsl on `release-26.05`. The ref is the *update policy*; the lock supplies
   reproducibility. Do not point either at `main`/unstable without a reason — that
   is how a routine `nix flake update` pulls next-release code onto a 26.05 base.
+  The third, `nixpkgs-unstable`, exists for **`claude-code` only** — a Nix-installed
+  binary cannot self-update and 26.05's 2.1.187 was stale enough to not list
+  current models (unstable had 2.1.220). Passed to host modules as the `unstable`
+  specialArg. Do not widen its use; take packages from it one at a time, with a
+  reason. Cost: a second ~478 MB nixpkgs source tree on disk, and **one more per
+  revision fetched** — `nix-collect-garbage` is what clears the old ones.
 - **Flakes are declared** in `hosts/wsl.nix`. `nixos-rebuild --flake` passes
   `--extra-experimental-features` itself (nixpkgs
   `pkgs/by-name/ni/nixos-rebuild-ng/src/nixos_rebuild/nix.py`), so rebuilds worked
