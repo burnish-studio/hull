@@ -142,16 +142,24 @@ same nixpkgs revision differ only by what changed. Note the store also holds eve
 nixpkgs revision ever fetched (~468 MB each), which only `nix-collect-garbage`
 clears — so "3 generations" is not the whole footprint.
 
-**Measured 2026-07-27 — keep this in proportion.** NixOS: 8.0 GB used, 7.8 GB of
-that the store, virtual disk 9.04 GB (≈1 GB overhead, so nothing meaningful is
-trapped and **compaction is not currently needed**). Fedora's virtual disk:
-**78.47 GB** — 8.7× the entire NixOS system.
+**Measured 2026-07-27.**
 
-So the generation cap is correct design but a **minor** disk lever today; it earns
-its keep once Phase 2 adds neovim, node and the rest. **The real disk win is
-retiring Fedora (~78 GB), which also permanently silences the `user@1000`
-failure.** Do not spend effort on store micro-management while that 78 GB is
-outstanding.
+| | |
+| --- | --- |
+| Windows `C:` | **474.9 GB total, 59.4 GB free** (87.5% full) |
+| NixOS guest | 8.0 GB used (7.8 GB of it the store); guest *claims* 948 GB free |
+| NixOS `ext4.vhdx` | 9.04 GB (≈1 GB overhead — nothing trapped, no compaction needed) |
+| Fedora `ext4.vhdx` | **78.47 GB** — 8.7× the whole NixOS system |
+
+Headroom is **tight and moving**: the roadmap recorded 67.5 GB free on 2026-07-24,
+so the NixOS install consumed ~8 GB in three days. Bounding growth is therefore
+materially useful, not housekeeping — especially as Phase 2 adds neovim, node and
+language servers.
+
+**The largest single win is still retiring Fedora (~78 GB — more than all remaining
+free space), which also permanently silences the `user@1000` failure.** Deferred by
+the captain 2026-07-27: it needs a migration pass first, so treat it as scheduled
+work, not a quick cleanup.
 
 Measure with `df -h /` and `du -sh /nix/store` on NixOS; list generations with
 `ls -l /nix/var/nix/profiles/` (`nix-env -p` needs root even to read). Virtual disk
