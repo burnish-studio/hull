@@ -10,9 +10,12 @@
   # does not. Declare them so the machine does not depend on installer state.
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # git is needed to clone hull locally; rebuilding from a local path avoids the
-  # GitHub fetcher serving a stale commit (see HANDOVER, rebuild workflow).
-  environment.systemPackages = [ pkgs.git ];
+  # git: clone hull locally so rebuilds run from a path, not the GitHub fetcher
+  # (which can serve a stale commit — see HANDOVER, rebuild workflow).
+  # claude-code: hull is developed on the machine it configures. Temporary home —
+  # this moves into the `agents` panel in Phase 5. Note the Nix-installed binary
+  # cannot self-update; it is pinned to whatever nixos-26.05 carries.
+  environment.systemPackages = with pkgs; [ git claude-code ];
 
   system.stateVersion = "26.05";
 }
