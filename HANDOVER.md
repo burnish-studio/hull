@@ -41,22 +41,42 @@ log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
   drives the system. The repo is public at `github.com/burnish-studio/hull`.
 - **Current user**: `nixos` (placeholder — replaced with the real user via the
   registry in Phase 3).
-- **`hosts/wsl.nix` exists** with a WSL2 cgroup fix (see Known Issue below).
-- **`flake.lock` is committed** — inputs are pinned to nixos-26.05.
+- **`hosts/wsl.nix` exists** and holds the host-type config (`wsl.enable`,
+  `wsl.defaultUser`, `stateVersion`, flakes, `git`) — no workarounds.
+- **`flake.lock` is committed.** Both inputs track the **26.05 release line**:
+  nixpkgs on `nixos-26.05` (the Hydra-tested channel branch — binaries are in the
+  cache; `release-26.05` is the raw one and would mean source builds) and
+  nixos-wsl on `release-26.05`. The ref is the *update policy*; the lock supplies
+  reproducibility. Do not point either at `main`/unstable without a reason — that
+  is how a routine `nix flake update` pulls next-release code onto a 26.05 base.
+- **Flakes are declared** in `hosts/wsl.nix`. `nixos-rebuild --flake` passes
+  `--extra-experimental-features` itself (nixpkgs
+  `pkgs/by-name/ni/nixos-rebuild-ng/src/nixos_rebuild/nix.py`), so rebuilds worked
+  without this — but bare `nix` and the Phase 4 CLI need it declared.
 
 ## The rebuild workflow (important — read this)
 
-When rebuilding from GitHub, Nix sometimes fetches a cached old commit rather
-than HEAD. If the rebuild says "path does not exist" or behaves as if recent
-changes are missing, specify the commit hash explicitly:
+**Ordering matters once.** `git` is now in `hosts/wsl.nix`, but it is not on the
+machine until a rebuild installs it. So the *next* rebuild must still come from
+GitHub; after that, switch to a local clone permanently.
 
+**Step 1 — bootstrap from GitHub (once):**
+```bash
+sudo nixos-rebuild switch --flake github:burnish-studio/hull#wsl
+```
+If it reports "path does not exist" or behaves as if recent changes are missing,
+Nix's GitHub fetcher has served a cached commit — pass the hash explicitly:
 ```bash
 sudo nixos-rebuild switch --flake github:burnish-studio/hull/<hash>#wsl
 ```
 
-Get the latest hash from `git log --oneline -1` on the Fedora side, or from
-GitHub. This is a Nix GitHub fetcher cache issue; it goes away once NixOS has
-git and can clone the repo locally.
+**Step 2 — clone locally and never do the above again:**
+```bash
+git clone https://github.com/burnish-studio/hull ~/hull
+sudo nixos-rebuild switch --flake ~/hull#wsl
+```
+Rebuilding from a local path removes the stale-commit class of failure entirely,
+and lets you test uncommitted changes.
 
 ## What is decided (see the ADRs for the reasoning)
 
@@ -71,47 +91,45 @@ git and can clone the repo locally.
 
 ## Known issue: user session fails at boot and during rebuild
 
-**Symptom:** On every WSL boot: `wsl: Failed to start the systemd user session
-for 'nixos'`. On every `nixos-rebuild switch`: `warning: user activation for
-nixos failed` (exit code 4).
+**Symptom:** On WSL boot: `wsl: Failed to start the systemd user session for
+'nixos'`. On `nixos-rebuild switch`: `warning: user activation for nixos failed`
+(exit code 4).
 
-**Root cause:** `user@1000.service` (systemd user session manager) fails with
-`Result: resources` / `Failed to spawn executor: Device or resource busy`. This
-is a WSL2 cgroup limitation — the user session executor cannot set up the
-required cgroup context.
-
-**What we tried:**
-- `hosts/wsl.nix` overrides `Delegate=no` and `DelegateSubgroup=` via a
-  `systemd.packages` drop-in. The drop-in loads correctly (confirmed via
-  `systemctl cat`) but the failure persists — cgroup delegation is not the
-  root cause.
-
-**Impact:** None on actual functionality. Shell, sudo, nixos-rebuild, and all
-tools work correctly. No user-level systemd services are needed for our WSL
-dev environment.
-
-**Root cause (researched 2026-07-24):** This is an upstream WSL2 bug
-(labelled as such by NixOS-WSL maintainers). It occurs specifically when
-another WSL distro (Fedora Remix) is already running when NixOS is opened.
-WSL's shell wrapper detects that `SIGCHLD` is being ignored (inherited from
-the already-running distro context) and skips user session setup. We saw this
-directly in our logs: `shell-wrapper: SIGCHLD is ignored, skipping setting
-environment`. There is no NixOS-level fix — it's in the WSL interop layer.
+**Cause (researched 2026-07-24):** an upstream **WSL2 interop bug**, labelled as
+such by the NixOS-WSL maintainers. It fires only when another WSL distro (Fedora
+Remix) is already running when NixOS is opened: WSL's shell wrapper sees that
+`SIGCHLD` is being ignored — inherited from the running distro's context — and
+skips user session setup. Our own logs showed it directly: `shell-wrapper:
+SIGCHLD is ignored, skipping setting environment`. Downstream of that,
+`user@1000.service` fails with `Result: resources` / `Failed to spawn executor:
+Device or resource busy`. **There is no NixOS-level fix** — the defect is in the
+WSL interop layer, above anything hull controls.
 
 **Workaround:** terminate Fedora before opening NixOS:
 ```powershell
 wsl --terminate fedoraremix
 ```
-Then open NixOS — the user session starts cleanly. The problem disappears
-entirely once Fedora is retired in Phase 7.
+The problem disappears entirely once Fedora is retired in Phase 7.
 
-**The `hosts/wsl.nix` drop-in** (`Delegate=no`, `DelegateSubgroup=`) can be
-removed if it proves unnecessary once the SIGCHLD issue is understood. It does
-no harm but may not be the right fix.
+**What we tried and removed (2026-07-27):** a `systemd.packages` drop-in on
+`user@.service` setting `Delegate=no` / `DelegateSubgroup=`, on the theory that
+cgroup delegation was the cause. The drop-in loaded correctly (confirmed via
+`systemctl cat`) but the failure persisted — cgroup delegation was *not* the
+cause. **The drop-in has been deleted** rather than left in place: a fix that
+provably does not fix anything is cruft, and it misattributes an upstream bug to
+our config. `hosts/wsl.nix` is now stock host configuration only. Do not
+reintroduce a systemd workaround for this symptom without first reproducing it
+on a clean start (Fedora terminated).
 
 **Relevant issues:**
 - https://github.com/nix-community/NixOS-WSL/issues/888
 - https://github.com/microsoft/WSL/issues/13826#issuecomment-3996921259
+
+**Open verification (next session, captain-driven):** confirm that with Fedora
+terminated the boot and `nixos-rebuild switch` are both **completely clean** — no
+warnings, exit 0. That is the "brand-new NixOS-WSL has zero errors" baseline we
+want before building Phase 2 on top of it. If anything still errors on a clean
+start, it is *our* problem and takes priority over Phase 2.
 
 ## What is NOT done
 
@@ -128,18 +146,19 @@ no harm but may not be the right fix.
 
 ## Immediate next step — Phase 2
 
-Assuming the user session issue is either resolved or accepted:
+Gated on the clean-start verification above passing:
 
-1. **Investigate the NixOS-WSL issue tracker** for the `user@.service` EBUSY
-   error — 15 minutes max. If there's a clean fix, apply it. If not, add a
-   comment to `hosts/wsl.nix` and move on.
-
-2. **Design the `env` panel interface** — what options does it expose?
+1. **Design the `env` panel interface** — what options does it expose?
    Start with zsh (shell, plugins, prompt via starship) as the first module.
    Reference `hull-fedora` for working content to port.
 
-3. **Create `modules/env/`** — begin with a minimal zsh module that at least
+2. **Create `modules/env/`** — begin with a minimal zsh module that at least
    sets the default shell, then iterate.
+
+Note on porting: v1's environment content is **not** in tidy portable files.
+`hull-fedora/home/` holds only `AGENTS.md`; the substance (git identity,
+accounts, URL rewrites) is inline in a single monolithic `home.nix`. Phase 2 is
+extraction and re-segmentation, not file copying — budget accordingly.
 
 ## Working with the captain (alex)
 

@@ -19,12 +19,19 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
 - [x] Disk cleanup on the Windows host — 67.5 GB free (2026-07-24).
 - [x] NixOS-WSL installed as a second distro beside Fedora Remix.
 - [x] Minimal `flake.nix` producing `nixosConfigurations.wsl`.
-- [x] `hosts/wsl.nix` created — WSL2-specific config; cgroup drop-in in place.
-- [x] `flake.lock` committed — inputs pinned to nixos-26.05.
+- [x] `hosts/wsl.nix` created — the host-type config, stock settings only.
+- [x] `flake.lock` committed — both inputs on the 26.05 release line (nixpkgs
+      `nixos-26.05`, nixos-wsl `release-26.05`); no unstable/`main` refs.
+- [x] Flakes declared in-config; `git` added so hull can be cloned and rebuilt
+      from a local path (kills the stale-GitHub-commit failure mode).
 - [x] Repo public at `github.com/burnish-studio/hull`; rebuilds from GitHub.
-- [ ] **Known issue:** `user@1000.service` fails at boot with `Result: resources`
-      (WSL2 cgroup executor EBUSY). Cosmetic — no functional impact. Check
-      NixOS-WSL issue tracker before investing more time; see HANDOVER.md.
+- [x] User session failure diagnosed as an **upstream WSL2 interop bug** (not
+      cgroup delegation); the non-working drop-in removed 2026-07-27. See
+      HANDOVER.md.
+- [ ] **Verify the zero-error baseline:** with Fedora terminated, boot and
+      `nixos-rebuild switch` must both be completely clean — no warnings, exit 0.
+      A brand-new NixOS-WSL instance should have no errors; anything remaining on
+      a clean start is ours and outranks Phase 2.
 - **Milestone:** NixOS-WSL boots and rebuilds from the hull flake. ✅
 
 ## Phase 2 — Module interfaces + the `env` panel
