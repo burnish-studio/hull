@@ -68,6 +68,13 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
       `hull update --check` to preview what would change without applying.
 - [ ] A **fake-`$HOME` test harness** for `account` / `doctor` from the start —
       the only genuinely risky code left.
+- [ ] **`hull switch` caps generations as part of the rebuild** — switch, then
+      `nix-env -p /nix/var/nix/profiles/system --delete-generations +3`, then
+      `nix-collect-garbage`. Decided 2026-07-27: the rebuild is the only thing
+      that creates generations, so it is the correct trigger. A scheduled timer
+      was considered and rejected — it bounds the average, not the peak, and on
+      WSL the peak is what permanently costs Windows disk (the virtual disk grows
+      but never shrinks). Steady state 3 generations, transient peak 4.
 - **Milestone:** the `hull` package builds, shellcheck passes, tests pass.
 
 ## Phase 5 — The `agents` panel

@@ -85,6 +85,38 @@ sudo nixos-rebuild switch --flake ~/hull#wsl
 Rebuilding from a local path removes the stale-commit class of failure entirely,
 and lets you test uncommitted changes.
 
+## Disk and generations (policy decided 2026-07-27)
+
+**Keep 3 system generations, capped at rebuild time.** Not automated yet — it
+lands in `hull switch` in Phase 4 (see ROADMAP). Until then, run it by hand after
+a rebuild:
+
+```bash
+sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +3
+sudo nix-collect-garbage
+```
+
+**Why capping and not periodic cleanup:** WSL keeps the filesystem in a virtual
+disk that grows but never shrinks. Space freed inside NixOS is *not* returned to
+Windows, so the peak store size is what permanently costs disk. Capping prevents
+the peak; cleaning up afterwards does not undo it. A scheduled timer was rejected
+for the same reason — it bounds the average, not the peak.
+
+Generations are cheap: the store is content-addressed, so generations sharing the
+same nixpkgs revision differ only by what changed. Note the store also holds every
+nixpkgs revision ever fetched (~468 MB each), which only `nix-collect-garbage`
+clears — so "3 generations" is not the whole footprint.
+
+**Losing old generations costs time, not recoverability** — hull is in git, so any
+past system can be rebuilt from any commit. Generations only buy *instant*
+rollback. Hence 3 rather than 10.
+
+**One-time reclaim (Windows-side, manual):** the virtual disk is already at its
+high-water mark, so capping only bounds future growth. To return the existing
+space to Windows: cap, garbage-collect, then compact the disk from Windows. Per
+hull's boundaries that compaction stays on the manual Windows checklist alongside
+WezTerm and fonts — hull never touches Windows.
+
 ## What is decided (see the ADRs for the reasoning)
 
 - **0001** — target **NixOS exclusively**; two host types: `wsl` (NixOS-WSL) and
