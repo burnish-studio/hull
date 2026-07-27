@@ -1,6 +1,6 @@
 # Handover — for an agent picking this up cold
 
-Accurate as of **2026-07-24**, end of the Phase 1 session.
+Accurate as of **2026-07-27**, end of the Phase 1 close-out session.
 
 ## One-line state
 
@@ -16,7 +16,7 @@ The immediate next step is Phase 2: the `env` panel and module interfaces.
 
 1. **this file** — state + how to work here
 2. `README.md` — what hull is, in one screen
-3. `docs/adr/0001`–`0005` — the decisions, each a standalone titled ADR
+3. `docs/adr/0001`–`0006` — the decisions, each a standalone titled ADR
 4. `ARCHITECTURE.md` — the target shape
 5. `docs/how-it-works.md` — the machinery: flakes vs modules, evaluation vs
    activation, why module order does not matter. Read this before touching
@@ -30,10 +30,15 @@ reframed (not gospel).
 
 ## The two repos (do not confuse them)
 
-| path | what | edit? |
+| repo | what | edit? |
 | --- | --- | --- |
-| `~/burnish-studio/hull` | **greenfield**, NixOS-native — this repo, the main hull going forward | yes |
-| `~/burnish-studio/hull-fedora` | **frozen v1** (Fedora + Home Manager, imperative bash) | **no — reference only** |
+| `hull` | **greenfield**, NixOS-native — this repo, the main hull going forward | yes |
+| `hull-fedora` | **frozen v1** (Fedora + Home Manager, imperative bash) | **no — reference only** |
+
+Paths differ by where you are working: on **NixOS** they are `~/hull` and
+`~/hull-fedora`; on the legacy **Fedora** distro they are under
+`~/burnish-studio/`. Both are on GitHub under `burnish-studio/`, so either can be
+cloned anywhere. NixOS is the intended workplace — see "Working from NixOS".
 
 `hull-fedora` is where you *mine* working content (neovim, wezterm, herdr,
 starship, the git-identity logic, agent settings) and read the fuller metaphor
@@ -65,40 +70,32 @@ log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
   `pkgs/by-name/ni/nixos-rebuild-ng/src/nixos_rebuild/nix.py`), so rebuilds worked
   without this — but bare `nix` and the Phase 4 CLI need it declared.
 
-## The rebuild workflow (important — read this)
+## Working from NixOS — the rebuild workflow
 
-**Ordering matters once.** `git` is now in `hosts/wsl.nix`, but it is not on the
-machine until a rebuild installs it. So the *next* rebuild must still come from
-GitHub; after that, switch to a local clone permanently.
+hull is developed **on the machine it configures**. `git` and `claude-code` are
+installed, so nothing needs bootstrapping any more.
 
-**Step 1 — bootstrap from GitHub (once):**
-```bash
-sudo nixos-rebuild switch --flake github:burnish-studio/hull#wsl
-```
-If it reports "path does not exist" or behaves as if recent changes are missing,
-Nix's GitHub fetcher has served a cached commit — pass the hash explicitly:
-```bash
-sudo nixos-rebuild switch --flake github:burnish-studio/hull/<hash>#wsl
-```
-
-**Step 2 — clone locally and never do the above again:**
-```bash
-git clone https://github.com/burnish-studio/hull ~/hull
-sudo nixos-rebuild switch --flake ~/hull#wsl
-```
-Rebuilding from a local path removes the stale-commit class of failure entirely,
-and lets you test uncommitted changes.
-
-## Working from NixOS (as of 2026-07-27)
-
-hull is developed **on the machine it configures**. Both repos are cloned on the
-NixOS side over HTTPS (no SSH identity exists there until Phase 3):
+**First-time setup on the NixOS side** (HTTPS, not SSH — no SSH identity exists
+there until Phase 3):
 
 ```bash
 git clone https://github.com/burnish-studio/hull ~/hull
 git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora   # read-only quarry
-sudo nixos-rebuild switch --flake ~/hull#wsl                            # local path, not GitHub
 ```
+
+**Normal rebuild — always from the local path:**
+```bash
+sudo nixos-rebuild switch --flake ~/hull#wsl
+```
+
+Rebuilding from a path (not `github:…`) removes an entire class of failure: the
+GitHub fetcher can serve a **cached older commit**, producing a build that
+mysteriously lacks recent changes. If you ever must rebuild from GitHub, pass the
+commit hash explicitly — `github:burnish-studio/hull/<hash>#wsl` — because the
+fetcher cache is per-machine and cannot be trusted to have HEAD.
+
+A local path also lets you test uncommitted work, subject to the git-tracking
+gotcha below.
 
 **Division of labour:** the agent edits, and runs `nix flake check`,
 `nix build --dry-run` and `nixos-rebuild build` freely — all non-destructive. The
@@ -120,10 +117,15 @@ documented upstream bug, not a regression. The fix is to stop starting Fedora.
 
 ## Disk and generations (policy decided 2026-07-27)
 
-**Keep 3 system generations. Now automatic** — `hosts/wsl.nix` caps them in
+**Keep 3 system generations. Automatic** — `hosts/wsl.nix` caps them in
 `system.activationScripts`, so every `nixos-rebuild switch` enforces the ceiling
 however it was invoked. `auto-optimise-store` dedupes continuously. See ADR 0006
 for the full reasoning; do not replace either with a timer.
+
+> ⚠️ **Not yet applied to the running machine.** The live system was built from
+> `eb0bbbb`, which predates the disk-hygiene commit (`d3629ab`). The cap and
+> `auto-optimise-store` take effect on the **next** `nixos-rebuild switch`. Until
+> then generations are uncapped.
 
 Reclaim (the slow part) is still manual until `hull switch` owns it in Phase 4:
 
@@ -142,19 +144,25 @@ same nixpkgs revision differ only by what changed. Note the store also holds eve
 nixpkgs revision ever fetched (~468 MB each), which only `nix-collect-garbage`
 clears — so "3 generations" is not the whole footprint.
 
-**Measured 2026-07-27.**
+**Measured 2026-07-27, after the first manual collection** (904 store paths
+deleted, 3.9 GiB freed, 7 generations → 3):
 
 | | |
 | --- | --- |
 | Windows `C:` | **474.9 GB total, 59.4 GB free** (87.5% full) |
-| NixOS guest | 8.0 GB used (7.8 GB of it the store); guest *claims* 948 GB free |
-| NixOS `ext4.vhdx` | 9.04 GB (≈1 GB overhead — nothing trapped, no compaction needed) |
-| Fedora `ext4.vhdx` | **78.47 GB** — 8.7× the whole NixOS system |
+| NixOS guest | **3.8 GB used** (was 8.0 GB before collection); guest *claims* 952 GB free |
+| NixOS `ext4.vhdx` | 9.04 GB — **so ~5 GB is now trapped**, see reclaim below |
+| Fedora `ext4.vhdx` | **78.47 GB** — 20× the collected NixOS system |
 
 Headroom is **tight and moving**: the roadmap recorded 67.5 GB free on 2026-07-24,
 so the NixOS install consumed ~8 GB in three days. Bounding growth is therefore
 materially useful, not housekeeping — especially as Phase 2 adds neovim, node and
 language servers.
+
+Note the first collection freed **3.9 GB, not the 1–2 GB estimated** — accumulated
+nixpkgs revisions and superseded generations were a bigger share than expected.
+Hardlink dedup reported ≈0 saving immediately afterwards, which is expected: it
+pays off as generations re-accumulate overlapping content, not on an empty store.
 
 **The largest single win is still retiring Fedora (~78 GB — more than all remaining
 free space), which also permanently silences the `user@1000` failure.** Deferred by
@@ -171,12 +179,20 @@ sizes are visible from Windows by walking
 past system can be rebuilt from any commit. Generations only buy *instant*
 rollback. Hence 3 rather than 10.
 
-**If reclaim is ever needed** (not now — see the measurements above): a WSL virtual
-disk grows but never shrinks, so freeing space inside NixOS does not return it to
-Windows. The sequence is cap, garbage-collect, then compact from Windows
-(`wsl --manage <distro> --set-sparse true` on recent WSL, otherwise
-`diskpart`/`Optimize-VHD`). Per hull's boundaries that compaction stays on the
-manual Windows checklist alongside WezTerm and fonts — hull never touches Windows.
+**Reclaim is now worth doing once.** The guest dropped to 3.8 GB but the virtual
+disk is still 9.04 GB, so roughly **5 GB is trapped** — freed inside NixOS, not
+returned to Windows. A WSL virtual disk grows but never shrinks on its own. To
+recover it, from Windows:
+
+```powershell
+wsl --terminate NixOS
+wsl --manage NixOS --set-sparse true    # recent WSL; else diskpart / Optimize-VHD
+```
+
+Check `wsl --manage --help` first — the flag is absent on older WSL builds. Per
+hull's boundaries this stays a **manual Windows checklist item** alongside WezTerm
+and fonts; hull never touches Windows. Once the activation-time cap is live (see
+below), the ceiling should hold and this should not need repeating often.
 
 ## What is decided (see the ADRs for the reasoning)
 
@@ -269,6 +285,56 @@ start, but will fail on any boot where Fedora was running. Until Phase 7, do not
 make the `env` panel *depend* on Home Manager user services. File-based config
 (zsh, neovim, git, starship) is unaffected either way — prefer it.
 
+## Session log — 2026-07-27 (Phase 1 close-out)
+
+What changed, so a fresh agent can see the delta rather than re-deriving it.
+
+**Removed (the bulk of the value):**
+- The `Delegate=no` / `DelegateSubgroup=` drop-in on `user@.service`. It never
+  worked, and it wrongly attributed an upstream bug to hull's config.
+- An anonymous inline module in `flake.nix` that set host config, contradicting
+  `ARCHITECTURE.md`'s rule that host variation lives at the host layer. Moved into
+  `hosts/wsl.nix`.
+- The 2026-07-24 SIGCHLD root-cause claim, refuted by journal timestamps.
+
+**Added:**
+- `nixos-wsl` repinned from `main` → `release-26.05`, matching nixpkgs.
+- Flakes declared in-config (rebuilds worked only because `nixos-rebuild` passes
+  the flag itself; bare `nix` and the Phase 4 CLI need it declared).
+- `git` and `claude-code` (unfree, allowed by name not blanket `allowUnfree`).
+- Disk hygiene per ADR 0006.
+- `docs/how-it-works.md` — flakes vs modules, evaluation vs activation.
+
+**Verified:** zero-error baseline with both distros terminated, twice. Also a
+reproducibility check — the same `nix.conf` store hash
+(`n6qz6cc0ihib9y16g8vcl5c1kzazcsnj`) and the same system toplevel (`vhza8gd7…`)
+were computed on Fedora and produced on NixOS independently.
+
+**Two corrections worth remembering:**
+- `nix flake check` passed a config that could not build (`claude-code`'s unfree
+  licence). Only `nix build --dry-run` forces package derivations. Use it as the
+  gate — this is why that rule is above.
+- The first garbage collection freed 3.9 GB against a 1–2 GB estimate. Do not
+  treat store growth estimates as reliable; measure.
+
+## When to move the session inside NixOS
+
+**Now — at the start of the next session.** Nothing blocks it: `claude-code`
+2.1.187 and `git` 2.54.0 are on the machine and verified.
+
+Why now rather than later:
+- Phase 2 is the **interactive environment** (zsh, prompt, neovim). Its
+  correctness is experiential — it cannot be evaluated from outside, only used.
+  Phase 1 was flake/system config, which *could* be fully verified remotely.
+- Working inside NixOS means Fedora need not run at all, so the single-distro case
+  hull targets becomes the default rather than a ceremony — and the `user@1000`
+  noise disappears.
+- The edit → build → inspect loop stops routing through the captain for every
+  iteration.
+
+First 15 minutes of that session: clone both repos, `claude --version`, the
+housekeeping rebuild above, then confirm `nix build --dry-run` works from `~/hull`.
+
 ## What is NOT done
 
 - **Module interfaces are undesigned** — the deep-module work is Phase 2.
@@ -281,10 +347,30 @@ make the `env` panel *depend* on Home Manager user services. File-based config
   Real user comes from the registry (Phase 3).
 - **`hosts/native.nix`** does not exist — Phase 6.
 - A NixOS minimal ISO is on a USB stick ready for the laptop (Phase 6 prep).
+- **`claude-code` sits in `hosts/wsl.nix` temporarily** — it belongs in the
+  `agents` panel (Phase 5). It also cannot self-update from the Nix store; if it
+  goes badly stale, that is the forcing function for a scoped `unstable` input,
+  not a reason to unpin.
+- **Disk-hygiene config is committed but not yet activated** — see the warning in
+  the disk section; one rebuild applies it.
+- **~5 GB is trapped in the WSL virtual disk** — one manual Windows-side
+  compaction recovers it.
+- **Fedora is still installed and holds 78.47 GB.** Retirement deferred by the
+  captain 2026-07-27 pending a migration pass. Do not delete it unprompted.
 
 ## Immediate next step — Phase 2
 
-Gated on the clean-start verification above passing:
+Phase 1 is closed; nothing gates this.
+
+**First, one housekeeping rebuild** (from inside NixOS) to apply the disk-hygiene
+config, which the live system predates:
+
+```bash
+sudo nixos-rebuild switch --flake ~/hull#wsl
+ls -l /nix/var/nix/profiles/     # expect at most 3 generations afterwards
+```
+
+Then:
 
 1. **Design the `env` panel interface** — what options does it expose?
    Start with zsh (shell, plugins, prompt via starship) as the first module.
@@ -321,6 +407,7 @@ extraction and re-segmentation, not file copying — budget accordingly.
 
 ## Tooling note
 
-Project skills (`/grill-with-docs` etc.) live in `hull-fedora/.claude/skills/`.
-Copy into this repo's `.claude/skills/` when needed. This repo has a GitHub
-remote at `github.com/burnish-studio/hull` (public).
+Project skills (`/grill-with-docs` etc.) live in the `hull-fedora` repo under
+`.claude/skills/`. Copy into this repo's `.claude/skills/` when needed — they have
+not been ported yet. This repo's remote is `github.com/burnish-studio/hull`
+(public); `hull-fedora` is at `github.com/burnish-studio/hull-fedora`.
