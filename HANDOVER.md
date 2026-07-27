@@ -18,8 +18,11 @@ The immediate next step is Phase 2: the `env` panel and module interfaces.
 2. `README.md` — what hull is, in one screen
 3. `docs/adr/0001`–`0005` — the decisions, each a standalone titled ADR
 4. `ARCHITECTURE.md` — the target shape
-5. `CONTEXT.md` — the glossary / vocabulary
-6. `ROADMAP.md` — **the plan ahead** (phases, milestones, open questions)
+5. `docs/how-it-works.md` — the machinery: flakes vs modules, evaluation vs
+   activation, why module order does not matter. Read this before touching
+   `flake.nix` or adding a module.
+6. `CONTEXT.md` — the glossary / vocabulary
+7. `ROADMAP.md` — **the plan ahead** (phases, milestones, open questions)
 
 Project memories auto-load at session start — read `hull-greenfield-rewrite`
 first; it explains the two-repo split and flags which v1-era memories are
