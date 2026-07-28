@@ -68,10 +68,32 @@
   home.file.".claude/statusline.sh".source =
     config.lib.file.mkOutOfStoreSymlink "${config.hull.repoPath}/modules/agents/claude/statusline.sh";
 
-  # Not done here, deliberately - Phase 5 proper:
-  #   * AGENTS.md and the one-source-three-targets pattern (a single file linked
-  #     to .claude/CLAUDE.md, .codex/AGENTS.md and .config/opencode/AGENTS.md).
-  #     That needs hull's agent instructions to be written first, which is a
-  #     content decision, not a wiring one.
-  #   * The house style currently recorded in HANDOVER moves into that file.
+  # --- Global agent instructions: one source, one link per agent ---------------
+  # Kun's one-source-many-targets pattern. A single AGENTS.md is linked to each
+  # agent tool's global instructions path, so every harness reads the same policy
+  # and there is exactly one file to edit.
+  #
+  # The paths are NOT a shared convention - each tool has its own, verified
+  # rather than assumed:
+  #   Claude Code  ~/.claude/CLAUDE.md
+  #   pi           ~/.pi/agent/AGENTS.md   (pi's README: "Pi loads AGENTS.md (or
+  #                CLAUDE.md) at startup from ~/.pi/agent/AGENTS.md (global),
+  #                parent directories, and the current directory")
+  #
+  # Kun links three targets because he runs three tools; hull links two because
+  # it declares two. Adding `.codex/AGENTS.md` or `.config/opencode/AGENTS.md` is
+  # one line each if those agents are ever declared here - do not add them
+  # speculatively.
+  #
+  # Out-of-store like everything else in this module: agent policy is edited far
+  # more often than it is rebuilt.
+  #
+  # Note both tools ALSO read a project-level AGENTS.md / CLAUDE.md and
+  # concatenate it with this one, so project-specific rules have a proper home
+  # and must not be added here.
+  home.file.".claude/CLAUDE.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.hull.repoPath}/modules/agents/AGENTS.md";
+
+  home.file.".pi/agent/AGENTS.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.hull.repoPath}/modules/agents/AGENTS.md";
 }
