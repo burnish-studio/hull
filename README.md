@@ -1,11 +1,11 @@
 # hull
 
-The **hull** — the reproducible environment layer of a larger, ship-themed
+The **hull** - the reproducible environment layer of a larger, ship-themed
 system: the structural body you work *inside* (shell, editor, terminal, tools,
 agent config). This is the **NixOS-native** hull.
 
 > **Status: building (2026-07-28).** NixOS-WSL boots and rebuilds from this
-> flake (Phase 1 ✅), and the environment modules — `shell`, `editor`, `tools` —
+> flake (Phase 1 ✅), and the environment modules - `shell`, `editor`, `tools` -
 > are activated and live on the machine (Phase 2 ✅). `git-identity`, `agents`,
 > the `hull` CLI and the `native` host are not written yet. New here? Start with
 > [`HANDOVER.md`](HANDOVER.md).
@@ -15,10 +15,10 @@ agent config). This is the **NixOS-native** hull.
 A NixOS flake that produces one reproducible developer environment across two
 host types:
 
-- **`wsl`** — NixOS-WSL, under Windows 11 (the main driver's terminal side).
-- **`native`** — NixOS on bare metal (currently a secondary laptop; could be any hardware).
+- **`wsl`** - NixOS-WSL, under Windows 11 (the main driver's terminal side).
+- **`native`** - NixOS on bare metal (currently a secondary laptop; could be any hardware).
 
-hull holds **no personal identity** — your name, GitHub accounts and keys live in
+hull holds **no personal identity** - your name, GitHub accounts and keys live in
 a separate private **registry** repo, wired in as a flake input. hull is
 identity-agnostic and host-type-aware (see [ADR 0002](docs/adr/0002-segmentation.md)).
 
@@ -26,7 +26,7 @@ identity-agnostic and host-type-aware (see [ADR 0002](docs/adr/0002-segmentation
 
 | File | What |
 | --- | --- |
-| [`HANDOVER.md`](HANDOVER.md) | current state + how to work here — **read first** |
+| [`HANDOVER.md`](HANDOVER.md) | current state + how to work here - **read first** |
 | [`ROADMAP.md`](ROADMAP.md) | the plan ahead: phases, milestones, open questions |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | the target shape (flake, hosts, modules, CLI) |
 | [`CONTEXT.md`](CONTEXT.md) | glossary / vocabulary |

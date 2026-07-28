@@ -1,4 +1,4 @@
-# Handover — for an agent picking this up cold
+# Handover - for an agent picking this up cold
 
 Accurate as of **2026-07-28**, end of the Phase 2 switch-and-verify session.
 
@@ -15,19 +15,14 @@ from the NixOS machine, using the identity decided that day. Everything through
 
 ### ⚠️ Start here
 
-**1. The style sweep** (agreed 2026-07-28, not started). This is the next task
-and it is fully specified - see "House style" below. Do it as its own commit
-before anything else, because it touches most documents and would bury any other
-change in the diff.
-
-**2. Enable the two GitHub email-privacy settings** on both accounts - see the
+**1. Enable the two GitHub email-privacy settings** on both accounts - see the
 identity section. Not done yet, and the captain runs this.
 
-**3. Rename the Linux account `nixos` to `alx`** - cheapest while the home
+**2. Rename the Linux account `nixos` to `alx`** - cheapest while the home
 directory is still nearly empty, and safe now hull is pushed. Procedure below.
 Its own small session; it is the fiddliest step so far.
 
-**4. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
+**3. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
 the registry has no GitHub remote.
 
 **Before touching anything: `git pull`.** The Fedora machine can still push to
@@ -36,7 +31,7 @@ this repo and has done so mid-session before. See "Two machines" below.
 If something is wrong, `sudo nixos-rebuild switch --rollback` returns you to
 generation 9, the known-good pre-Phase-2 system.
 
-## Identity — decided 2026-07-28
+## Identity - decided 2026-07-28
 
 The pseudonym is **`alx`**, used consistently: git `user.name` on both accounts,
 the Linux account name, and the handle everywhere else. It replaces the earlier
@@ -46,9 +41,9 @@ drift between "adam" and "alex" that the v1 registry still records.
 
 | | Same on both accounts? | Value |
 | --- | --- | --- |
-| GitHub **username** | no — globally unique | `burnish-studio`, `flintec-studio` |
+| GitHub **username** | no - globally unique | `burnish-studio`, `flintec-studio` |
 | git **`user.name`** | **yes** | `alx` |
-| git **`user.email`** | no — this *is* the routing | per-account noreply, below |
+| git **`user.email`** | no - this *is* the routing | per-account noreply, below |
 
 **Commit emails are the GitHub noreply addresses on both accounts:**
 
@@ -64,11 +59,11 @@ correct in the v1 `profile.nix`.
 
 **Why noreply rather than an address on `burni.sh`** (the domain is owned, and
 was considered): commit emails in public repositories are permanently public and
-actively harvested, and are effectively unrevocable — rewriting history on a
+actively harvested, and are effectively unrevocable - rewriting history on a
 public repo breaks every clone and fork. A noreply address **cannot receive mail
 at all**, so harvesting it achieves nothing. It also needs no mail infrastructure
 kept alive; the "durability" argument for a custom domain inverts the moment the
-domain lapses. And it is not a one-way door — git email is configuration, so
+domain lapses. And it is not a one-way door - git email is configuration, so
 switching later costs nothing and past commits simply keep the old address.
 
 `alx@burni.sh` remains the right **human-facing contact address** for client
@@ -77,7 +72,7 @@ requirements; keeping them separate is what resolved the question.
 
 **Two settings to enable on each GitHub account** (Settings → Emails):
 *Keep my email addresses private* (also where the numeric id is shown), and
-***Block command-line pushes that expose my email*** — the real safety net,
+***Block command-line pushes that expose my email*** - the real safety net,
 because it makes GitHub reject a misconfigured push rather than silently publish
 a private address. Same philosophy as the generation cap: make the failure
 impossible rather than remember not to trigger it.
@@ -86,7 +81,7 @@ impossible rather than remember not to trigger it.
 
 ### The identity is set repo-locally, and that is temporary
 
-Set 2026-07-28 in `~/hull/.git/config` — **repo-local, not global**, and
+Set 2026-07-28 in `~/hull/.git/config` - **repo-local, not global**, and
 explicitly a stopgap. Phase 3 generates it properly from the registry, at which
 point this hand-set pair should be removed rather than left to conflict:
 ```bash
@@ -106,7 +101,7 @@ resolution. Nothing was lost, but it cost time and could have lost content.
 
 Fedora is still installed and can still commit. **Run `git pull` before starting
 work**, and treat a rejected push as expected rather than alarming until Fedora
-retires in Phase 7 — at which point this hazard disappears along with the
+retires in Phase 7 - at which point this hazard disappears along with the
 `user@1000` failure. One more reason that retirement is worth pulling forward.
 
 **Related fragility found 2026-07-27, relevant to Phase 3:** the `gh auth login`
@@ -119,15 +114,15 @@ keeps live.
 
 ## Read order
 
-1. **this file** — state + how to work here
-2. `README.md` — what hull is, in one screen
-3. `docs/adr/0001`–`0006` — the decisions, each a standalone titled ADR
-4. `ARCHITECTURE.md` — the target shape
-5. `docs/how-it-works.md` — the machinery: flakes vs modules, evaluation vs
+1. **this file** - state + how to work here
+2. `README.md` - what hull is, in one screen
+3. `docs/adr/0001`–`0006` - the decisions, each a standalone titled ADR
+4. `ARCHITECTURE.md` - the target shape
+5. `docs/how-it-works.md` - the machinery: flakes vs modules, evaluation vs
    activation, why module order does not matter. Read this before touching
    `flake.nix` or adding a module.
-6. `CONTEXT.md` — the glossary / vocabulary
-7. `ROADMAP.md` — **the plan ahead** (phases, milestones, open questions)
+6. `CONTEXT.md` - the glossary / vocabulary
+7. `ROADMAP.md` - **the plan ahead** (phases, milestones, open questions)
 
 **This project does not use agent memory files.** Decided by the captain
 2026-07-27: memories are invisible, unversioned and machine-local, which is
@@ -138,7 +133,7 @@ yourself wanting to save a memory, write it here instead.
 ## Vocabulary change (2026-07-27): "panel" is retired
 
 Older documents and ADRs 0002/0003 call a sealed concern module a **panel**. That
-term is dropped — say **module**. It was a synonym that cost a translation step,
+term is dropped - say **module**. It was a synonym that cost a translation step,
 and "panel" already means a station's console interface in the wider system map.
 The ADRs were left unedited as historical records. See `CONTEXT.md`.
 
@@ -146,30 +141,30 @@ The ADRs were left unedited as historical records. See `CONTEXT.md`.
 
 | repo | what | edit? |
 | --- | --- | --- |
-| `~/hull` | **greenfield**, NixOS-native — this repo, the main hull going forward | yes |
-| `~/hull-fedora` | **frozen v1** (Fedora + Home Manager, imperative bash) | **no — reference only** |
-| `~/dotfiles` | **Kun Chen's dotfiles**, cloned 2026-07-28 — the upstream reference (macOS / nix-darwin) | **no — read only** |
+| `~/hull` | **greenfield**, NixOS-native - this repo, the main hull going forward | yes |
+| `~/hull-fedora` | **frozen v1** (Fedora + Home Manager, imperative bash) | **no - reference only** |
+| `~/dotfiles` | **Kun Chen's dotfiles**, cloned 2026-07-28 - the upstream reference (macOS / nix-darwin) | **no - read only** |
 
 Paths differ by where you are working: on **NixOS** they are `~/hull` and
 `~/hull-fedora`; on the legacy **Fedora** distro they are under
 `~/burnish-studio/`. Both are on GitHub under `burnish-studio/`, so either can be
-cloned anywhere. NixOS is the intended workplace — see "Working from NixOS".
+cloned anywhere. NixOS is the intended workplace - see "Working from NixOS".
 
 `hull-fedora` is where you *mine* working content (neovim, wezterm, herdr,
 starship, the git-identity logic, agent settings) and read the fuller metaphor
 (`ARCHITECTURE.md` §1–7) and v1's decisions (`.plan/DECISIONS.md`, the `D1..`
-log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
+log). Treat it as a quarry and a record - not as gospel; v1 had real bugs.
 
 ## Reviewed against Kun's dotfiles (2026-07-28)
 
 A full read of `~/dotfiles`. Recorded so it does not need repeating.
 
 **Its shape:** three Nix files (`flake.nix`, `configuration.nix`, `home.nix`),
-flat — no `modules/` and no `hosts/`. Plus `bootstrap.sh`, `rebuild.sh`, and a
+flat - no `modules/` and no `hosts/`. Plus `bootstrap.sh`, `rebuild.sh`, and a
 `home/` tree holding the nvim / wezterm / herdr / claude configs.
 
-**So hull is *more* structured than its reference, not less.** That is earned —
-Kun targets one Mac, hull targets two host types — but README's "the overall
+**So hull is *more* structured than its reference, not less.** That is earned -
+Kun targets one Mac, hull targets two host types - but README's "the overall
 structure is adapted from Kun Chen's dotfiles" overstates it. The **content** is
 closely derived (the zsh block, starship settings, aliases and the nvim lua are
 near-identical); the **structure** is hull's own.
@@ -179,7 +174,7 @@ near-identical); the **structure** is hull's own.
    `${config.home.homeDirectory}/.dotfiles`, and `rebuild.sh` runs
    `ln -sfn "$DIR" ~/.dotfiles` on every invocation to keep that true. That
    symlink dance *is* the "Gap C" pattern. `hull.repoPath` removes the need.
-2. **Unfree licensing.** Kun sets `nixpkgs.config.allowUnfree = true` — blanket.
+2. **Unfree licensing.** Kun sets `nixpkgs.config.allowUnfree = true` - blanket.
    hull names `claude-code` in a predicate, so a future unfree dependency cannot
    arrive unnoticed.
 3. **The herdr symlink.** Kun links the whole `.config/herdr` **directory**. hull
@@ -187,10 +182,10 @@ near-identical); the **structure** is hull's own.
    that directory and a socket inside the repo makes the path uncopyable by Nix,
    breaking every build. hull found a real bug in the pattern.
 
-**One place hull was behind:** `lazy-lock.json` — now fixed, see the nvim entry
+**One place hull was behind:** `lazy-lock.json` - now fixed, see the nvim entry
 under "What is NOT done".
 
-**"Stripping the old with the new"** — the captain's recollection of Kun's
+**"Stripping the old with the new"** - the captain's recollection of Kun's
 declarative discipline is `homebrew.onActivation.cleanup = "zap"`, which removes
 any Homebrew package not listed in the config. It is a **Homebrew** mechanism and
 macOS-only. There is no NixOS equivalent to add, because the system profile
@@ -200,18 +195,18 @@ imperative escape hatch in his setup.
 
 **Mine this for Phase 5 (`agents`):** `home/.claude/settings.json` (theme plus a
 statusline command printing model name and context-window usage), and the
-one-source-three-targets pattern — a single `home/AGENTS.md` linked to
+one-source-three-targets pattern - a single `home/AGENTS.md` linked to
 `.claude/CLAUDE.md`, `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. His
 AGENTS.md is 15 terse lines. Two rules are already hull convention. **One is not:
 "Never use the em dash."** hull's documents use them throughout, so adopt that
-rule deliberately or not at all — do not import the file wholesale.
+rule deliberately or not at all - do not import the file wholesale.
 
 **Mine this for Phase 6 (`native`):** `home/.config/wezterm/wezterm.lua`, and
 font management via `nerd-fonts.hack` + `fonts.fontconfig.enable`. Both are
 Windows-side manual checklist items on WSL; on `native` they become declarative.
 
 **Not adopted: continuous integration.** Kun's only GitHub workflow auto-closes
-pull requests (a personal-repo policy) — he runs **no** build check in CI. A
+pull requests (a personal-repo policy) - he runs **no** build check in CI. A
 workflow running `nixos-rebuild build` on push would have caught the one bad
 `claude-code` push, but for a solo repo where the local gate is run reliably the
 marginal value is low and it adds a third-party action dependency. Revisit only
@@ -225,10 +220,10 @@ if pushing-from-one-machine-and-rebuilding-on-another becomes routine.
   drives the system. The repo is public at `github.com/burnish-studio/hull`.
 - **`git`, `gh` and `claude-code` are on the machine** (verified 2026-07-27:
   `git` 2.54.0, `gh` 2.96.0, `claude-code` 2.1.220). **hull is developed from
-  inside NixOS** — the first session run entirely from here was 2026-07-27.
+  inside NixOS** - the first session run entirely from here was 2026-07-27.
   These are **system** packages, not user packages, on purpose: `sudo
   nixos-rebuild` runs as root and needs `git` to read a flake from a git repo.
-- **Current user**: `nixos`, uid 1000 — a placeholder to be renamed to `alx`
+- **Current user**: `nixos`, uid 1000 - a placeholder to be renamed to `alx`
   (see "Renaming the Linux account" below). Login shell is **zsh**, live since
   the Phase 2 switch on 2026-07-28.
 - **Running generation is 10.** Generations 8, 9, 10 are held; the activation
@@ -242,32 +237,32 @@ if pushing-from-one-machine-and-rebuilding-on-another becomes routine.
 - **`hosts/wsl.nix`** holds host config only: WSL settings, flakes, system
   packages, the unfree predicate, disk hygiene, the zsh login shell, and the
   home-manager block that imports the modules. No workarounds.
-- **`modules/` is no longer empty** — `paths.nix`, `shell/`, `editor/`, `tools/`.
+- **`modules/` is no longer empty** - `paths.nix`, `shell/`, `editor/`, `tools/`.
 - **`flake.lock` is committed.** Three inputs track the **26.05 release line**:
-  nixpkgs on `nixos-26.05` (the Hydra-tested channel branch — binaries are in the
+  nixpkgs on `nixos-26.05` (the Hydra-tested channel branch - binaries are in the
   cache; `release-26.05` is the raw one and would mean source builds), nixos-wsl
   and home-manager both on `release-26.05`. The ref is the *update policy*; the
   lock supplies reproducibility. Do not point these at `main`/unstable without a
-  reason — that is how a routine `nix flake update` pulls next-release code onto
+  reason - that is how a routine `nix flake update` pulls next-release code onto
   a 26.05 base.
 - **One deliberate exception: `nixpkgs-unstable`.** It supplies exactly **two**
   packages, both justified in comments where they are used: `claude-code` (a
   Nix-installed binary cannot self-update and 26.05 goes stale in weeks) and
   `herdr` (verified absent from 26.05; present in unstable at 0.7.5). Never make
   unstable the default source. It reaches host modules as the `unstable`
-  specialArg. Do not widen its use — take packages from it one at a time, each
+  specialArg. Do not widen its use - take packages from it one at a time, each
   with a stated reason.
   **It has a standing disk cost:** a second full nixpkgs source tree, and one
   more for every revision fetched thereafter; only `nix-collect-garbage` clears
-  the old ones. (Recorded figures disagree — 468 MB in the disk section below,
+  the old ones. (Recorded figures disagree - 468 MB in the disk section below,
   478 MB when this was first noted on 2026-07-27. Re-measure before relying on
   either.)
 - **Flakes are declared** in `hosts/wsl.nix`. `nixos-rebuild --flake` passes
   `--extra-experimental-features` itself (nixpkgs
   `pkgs/by-name/ni/nixos-rebuild-ng/src/nixos_rebuild/nix.py`), so rebuilds worked
-  without this — but bare `nix` and the Phase 4 CLI need it declared.
+  without this - but bare `nix` and the Phase 4 CLI need it declared.
 
-## Working from NixOS — the rebuild workflow
+## Working from NixOS - the rebuild workflow
 
 hull is developed **on the machine it configures**. `git` and `claude-code` are
 installed, so nothing needs bootstrapping any more.
@@ -285,7 +280,7 @@ git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora
 ```
 
 **Two known papercuts, neither blocking:**
-- `gh` warns *"Authentication credentials saved in plain text"* — the token sits
+- `gh` warns *"Authentication credentials saved in plain text"* - the token sits
   unencrypted in `~/.config/gh/hosts.yml`. gh would use a secret service instead,
   but that needs a working user D-Bus session, which is exactly what the
   `user@1000` bug breaks. Acceptable for now (per-machine secret state, never in
@@ -293,7 +288,7 @@ git clone https://github.com/burnish-studio/hull-fedora ~/hull-fedora
 - `gh auth login` cannot open a browser: `xdg-open,x-www-browser,wslview` not in
   PATH. Paste the URL manually. Fixing it properly would mean `wslu`/`wslview`,
   which shells out to Windows and so brushes the "hull never touches Windows"
-  boundary — not worth an exception for a convenience.
+  boundary - not worth an exception for a convenience.
 
 ### Authentication: what is declarative and what is not
 
@@ -305,7 +300,7 @@ Three separate things, and conflating them is how v1 went wrong:
 | the **credential** (token / SSH key) | per-machine secret, **never in Nix or git** | now, imperatively, by design |
 | the **routing** (which account for which repo) | declarative, generated from the registry | Phase 3 |
 
-So authenticating by hand now is *not* a violation — the roadmap already states
+So authenticating by hand now is *not* a violation - the roadmap already states
 that keys stay per-machine and are never in Nix. What must not be hand-built is the
 **routing**: no hand-written `~/.ssh/config` aliases, no hand-edited gitconfig
 `includeIf` rules. Phase 3 generates those from the registry, and hand-made
@@ -314,10 +309,10 @@ versions would be regenerated (or worse, silently conflict).
 **One account is enough for now.** Phase 2 only touches `hull` and `hull-fedora`,
 both under `burnish-studio`. The second account matters when Phase 3 tests
 multi-account routing. Expect Phase 3 to switch these remotes from HTTPS to the
-SSH-alias form (`git@github-burnish:…`), as on the Fedora side — that is the
+SSH-alias form (`git@github-burnish:…`), as on the Fedora side - that is the
 declarative routing arriving, not a mistake being corrected.
 
-**Normal rebuild — always from the local path:**
+**Normal rebuild - always from the local path:**
 ```bash
 sudo nixos-rebuild switch --flake ~/hull#wsl
 ```
@@ -325,31 +320,31 @@ sudo nixos-rebuild switch --flake ~/hull#wsl
 Rebuilding from a path (not `github:…`) removes an entire class of failure: the
 GitHub fetcher can serve a **cached older commit**, producing a build that
 mysteriously lacks recent changes. If you ever must rebuild from GitHub, pass the
-commit hash explicitly — `github:burnish-studio/hull/<hash>#wsl` — because the
+commit hash explicitly - `github:burnish-studio/hull/<hash>#wsl` - because the
 fetcher cache is per-machine and cannot be trusted to have HEAD.
 
 A local path also lets you test uncommitted work, subject to the git-tracking
 gotcha below.
 
 **Division of labour:** the agent edits, and runs `nix flake check`,
-`nix build --dry-run` and `nixos-rebuild build` freely — all non-destructive. The
+`nix build --dry-run` and `nixos-rebuild build` freely - all non-destructive. The
 captain runs `nixos-rebuild switch` and makes the experiential calls.
 
 **Gate before handing over a change:** `nix build --dry-run
 .#nixosConfigurations.wsl.config.system.build.toplevel`. `nix flake check` is
-*not* sufficient — it proves the config is well-formed but does not force package
+*not* sufficient - it proves the config is well-formed but does not force package
 derivations, so it misses unfree-licence and missing-package errors. This was
 learned the hard way: `claude-code` was pushed in a state that failed to build
 because only `flake check` had been run.
 
-Better still, and free: run the real thing — `nixos-rebuild build --flake .#wsl`.
+Better still, and free: run the real thing - `nixos-rebuild build --flake .#wsl`.
 It is non-destructive (builds the system, activates nothing), it proves the whole
 closure rather than predicting it, and it leaves a `./result` GC root so the
 captain's `switch` is near-instant. Used for the Phase 2 handover.
 
 **Do not trust the dry-run's "will be built" list as a cost estimate.** During
 Phase 2 it listed `nodejs-22.23.1.drv` under "these derivations will be built",
-implying a long source compile. It was wrong — `nix path-info --store
+implying a long source compile. It was wrong - `nix path-info --store
 https://cache.nixos.org <outPath>` confirmed the output was substitutable, and
 the real build fetched it. Check substitutability before believing you are about
 to compile something big.
@@ -372,27 +367,27 @@ environments`.
 **The cause:** VS Code injects a server from the Windows side into
 `~/.vscode-server-insiders/`, including a generic-linux prebuilt `node` that
 requests the interpreter `/lib64/ld-linux-x86-64.so.2`. NixOS is not a
-Filesystem Hierarchy Standard system, so that path holds **`stub-ld`** — a decoy
+Filesystem Hierarchy Standard system, so that path holds **`stub-ld`** - a decoy
 whose only job is to print exactly that error. Nothing was broken; VS Code simply
 assumes a conventional Linux layout.
 
 **The fix:** `programs.nix-ld.enable = true;` in `hosts/wsl.nix`. It replaces the
 decoy with a real loader and supplies a base library set (libstdc++, zlib,
-openssl, curl, systemd — see `nixos/modules/programs/nix-ld.nix` in nixpkgs),
+openssl, curl, systemd - see `nixos/modules/programs/nix-ld.nix` in nixpkgs),
 which covers node. No extra `libraries` entries were needed.
 
 **Verified live 2026-07-28:** `/lib64/ld-linux-x86-64.so.2` now resolves to
 `…-nix-ld-2.0.6/libexec/nix-ld` rather than `…-stub-ld-…`, and VS Code connects.
 
 **Why not `nix-community/nixos-vscode-server`**, the other common answer: it
-patches the server binaries via a **systemd user service** — precisely what the
+patches the server binaries via a **systemd user service** - precisely what the
 `user@1000` constraint below forbids depending on. `nix-ld` is a system-level
 setting and is therefore immune. The documented constraint picked the winner.
 
 **It does not breach "hull never touches Windows".** VS Code runs on the Windows
 side and connects inward; hull only permits the injected binary to execute. Note
 the server itself is downloaded imperatively and is **not** reproducible from
-this repo — same category as lazy.nvim's plugins, an already-accepted compromise.
+this repo - same category as lazy.nvim's plugins, an already-accepted compromise.
 
 It lives at the host layer rather than in a module because `native` does not
 exist yet, so there is no second consumer to design a seam for (ADR 0003).
@@ -412,22 +407,22 @@ Not needed for highlighting alone, so it has not been added.
 
 ## What Nix owns, and what it must not
 
-Asked directly 2026-07-28 — *"shouldn't everything inside the distro be set up
+Asked directly 2026-07-28 - *"shouldn't everything inside the distro be set up
 the proper Nix way, so hull reproduces the system fully?"* The goal is right, and
 there is a real boundary. Three categories:
 
-**(a) Configuration — Nix should own all of it.** Packages, dotfiles, shell,
+**(a) Configuration - Nix should own all of it.** Packages, dotfiles, shell,
 editor, services. Anything here that gets set up by hand is a bug to fix. This is
 where hull is already strong, and where the standard is absolute.
 
-**(b) Secrets — Nix must never own these.** Not a limitation to work around; a
-hard rule. **The Nix store is world-readable** — every file in `/nix/store` can
+**(b) Secrets - Nix must never own these.** Not a limitation to work around; a
+hard rule. **The Nix store is world-readable** - every file in `/nix/store` can
 be read by every user and process on the machine. Putting a token or a private
 key in a Nix file publishes it to the whole system *and* commits it to git. This
 is the most common Nix beginner mistake. The roadmap's rule that SSH keys stay
 per-machine and never enter Nix is correct and non-negotiable.
 
-**(c) Runtime state — Nix cannot own these, and should not.** Caches, shell
+**(c) Runtime state - Nix cannot own these, and should not.** Caches, shell
 history, nvim's cloned plugins, the VS Code server, session data. These are
 *outputs of using the system*, not configuration. Declaring them is a category
 error.
@@ -435,13 +430,13 @@ error.
 **Declarative does not mean stateless.** A rebuild swaps the system closure and
 the Home-Manager-managed file set; it does **not** wipe `$HOME`. Home Manager
 replaces the files it manages and leaves everything else alone. Kun's discipline
-is that *configuration* has no ad-hoc component — not that the home directory is
+is that *configuration* has no ad-hoc component - not that the home directory is
 erased on every build. Reading it the other way leads to chasing an impossible
 target.
 
 **So the `gh` token survives rebuilds indefinitely.** Rebuilds never touch
 `~/.config/gh`. Re-authentication happens only if the token expires, is revoked,
-or the file is deleted — never because you rebuilt. Same for SSH keys once
+or the file is deleted - never because you rebuilt. Same for SSH keys once
 Phase 3 lands.
 
 **The target end-state is small.** Once Phase 3 generates the git and ssh routing
@@ -455,7 +450,7 @@ where the virtual disk is managed by Windows, it introduces a whole new class of
 failure, and it fights the out-of-store symlink design already committed to. Too
 much complexity for a single-user development machine.
 
-**Adopted instead:** `hull doctor` gains a **home-directory audit** in Phase 4 —
+**Adopted instead:** `hull doctor` gains a **home-directory audit** in Phase 4 -
 a declared list of expected paths, reporting anything in `$HOME` that hull does
 not recognise. That converts "things are accumulating and I cannot tell what is
 legitimate" into a checkable invariant. Same instinct as the generation cap:
@@ -473,7 +468,7 @@ a `hosts.<name>.username` field designed to carry this.
 
 **The mechanism is kinder than expected.** Linux records a numeric **uid** on
 every file, not a name; the name is a lookup. The account is uid 1000, so if
-`alx` is also uid 1000, every existing file transfers ownership automatically —
+`alx` is also uid 1000, every existing file transfers ownership automatically -
 nothing needs `chown`. The scary part reduces to a `mv`.
 
 ```nix
@@ -484,7 +479,7 @@ then rebuild, `mv /home/nixos /home/alx` from a root shell, and
 `wsl --terminate NixOS` so the new `/etc/wsl.conf` takes effect.
 
 **Three caveats:**
-- You cannot rename an account you are logged into — do the move from
+- You cannot rename an account you are logged into - do the move from
   `wsl -d NixOS -u root`.
 - `users.mutableUsers` is `true`, so the old `nixos` account **lingers** until
   explicitly removed; it does not vanish on rebuild.
@@ -492,14 +487,14 @@ then rebuild, `mv /home/nixos /home/alx` from a root shell, and
   set. Decide it deliberately rather than inheriting it.
 
 **Do it after Phase 2 is pushed.** Once hull is on GitHub, the worst outcome of a
-botched rename is re-cloning and re-authenticating `gh` — a few minutes. That is
+botched rename is re-cloning and re-authenticating `gh` - a few minutes. That is
 the reproducibility claim being cashed in rather than asserted, and it is worth
 testing deliberately while the home directory is still nearly empty. Treat it as
 its own small session; it is the fiddliest step in the project so far.
 
 ## Disk and generations (policy decided 2026-07-27)
 
-**Keep 3 system generations. Automatic** — `hosts/wsl.nix` caps them in
+**Keep 3 system generations. Automatic** - `hosts/wsl.nix` caps them in
 `system.activationScripts`, so every `nixos-rebuild switch` enforces the ceiling
 however it was invoked. `auto-optimise-store` dedupes continuously. See ADR 0006
 for the full reasoning; do not replace either with a timer.
@@ -518,12 +513,12 @@ sudo nix-collect-garbage
 disk that grows but never shrinks. Space freed inside NixOS is *not* returned to
 Windows, so the peak store size is what permanently costs disk. Capping prevents
 the peak; cleaning up afterwards does not undo it. A scheduled timer was rejected
-for the same reason — it bounds the average, not the peak.
+for the same reason - it bounds the average, not the peak.
 
 Generations are cheap: the store is content-addressed, so generations sharing the
 same nixpkgs revision differ only by what changed. Note the store also holds every
 nixpkgs revision ever fetched (~468 MB each), which only `nix-collect-garbage`
-clears — so "3 generations" is not the whole footprint.
+clears - so "3 generations" is not the whole footprint.
 
 **Measured 2026-07-27, after the first manual collection** (904 store paths
 deleted, 3.9 GiB freed, 7 generations → 3):
@@ -532,11 +527,11 @@ deleted, 3.9 GiB freed, 7 generations → 3):
 | --- | --- |
 | Windows `C:` | **474.9 GB total, 59.4 GB free** (87.5% full) |
 | NixOS guest | **3.8 GB used** (was 8.0 GB before collection); guest *claims* 952 GB free |
-| NixOS `ext4.vhdx` | 9.04 GB — **so ~5 GB is now trapped**, see reclaim below |
-| Fedora `ext4.vhdx` | **78.47 GB** — 20× the collected NixOS system |
+| NixOS `ext4.vhdx` | 9.04 GB - **so ~5 GB is now trapped**, see reclaim below |
+| Fedora `ext4.vhdx` | **78.47 GB** - 20× the collected NixOS system |
 
 **Re-measured after the Phase 2 build (2026-07-27, same day, guest side only):**
-the store is **6.1 GB** and the guest reports **6.4 GB used** — up from 3.8 GB.
+the store is **6.1 GB** and the guest reports **6.4 GB used** - up from 3.8 GB.
 The Phase 2 closure (neovim, node, herdr, tree-sitter grammars, home-manager)
 accounts for it: the build fetched 93 MiB compressed / 320 MiB unpacked on top of
 an already-growing store. The Windows-side figures above were **not** re-measured
@@ -545,8 +540,8 @@ and are now stale by that much at least; the virtual disk only grows, so treat
 any disk decision.
 
 **VS Code costs 675 MB, outside the Nix store (measured 2026-07-28).**
-`~/.vscode-server-insiders` is the single largest thing in the home directory —
-larger than the entire Phase 2 closure addition — and it is imperative,
+`~/.vscode-server-insiders` is the single largest thing in the home directory -
+larger than the entire Phase 2 closure addition - and it is imperative,
 non-reproducible, and permanent virtual-disk growth. Not an argument against
 using VS Code; a number that belongs in any disk decision, because store
 measurements (`du -sh /nix/store`) do not see it. Measure the home directory
@@ -554,15 +549,15 @@ separately: `du -sh ~/.[a-zA-Z]* | sort -rh | head`.
 
 Headroom is **tight and moving**: the roadmap recorded 67.5 GB free on 2026-07-24,
 so the NixOS install consumed ~8 GB in three days. Bounding growth is therefore
-materially useful, not housekeeping — especially as Phase 2 adds neovim, node and
+materially useful, not housekeeping - especially as Phase 2 adds neovim, node and
 language servers.
 
-Note the first collection freed **3.9 GB, not the 1–2 GB estimated** — accumulated
+Note the first collection freed **3.9 GB, not the 1–2 GB estimated** - accumulated
 nixpkgs revisions and superseded generations were a bigger share than expected.
 Hardlink dedup reported ≈0 saving immediately afterwards, which is expected: it
 pays off as generations re-accumulate overlapping content, not on an empty store.
 
-**The largest single win is still retiring Fedora (~78 GB — more than all remaining
+**The largest single win is still retiring Fedora (~78 GB - more than all remaining
 free space), which also permanently silences the `user@1000` failure.** Deferred by
 the captain 2026-07-27: it needs a migration pass first, so treat it as scheduled
 work, not a quick cleanup.
@@ -571,14 +566,14 @@ Measure with `df -h /` and `du -sh /nix/store` on NixOS; list generations with
 `ls -l /nix/var/nix/profiles/` (`nix-env -p` needs root even to read). Virtual disk
 sizes are visible from Windows by walking
 `HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss` for each distro's
-`BasePath\ext4.vhdx` — unverified beyond the one run above.
+`BasePath\ext4.vhdx` - unverified beyond the one run above.
 
-**Losing old generations costs time, not recoverability** — hull is in git, so any
+**Losing old generations costs time, not recoverability** - hull is in git, so any
 past system can be rebuilt from any commit. Generations only buy *instant*
 rollback. Hence 3 rather than 10.
 
 **Reclaim is now worth doing once.** The guest dropped to 3.8 GB but the virtual
-disk is still 9.04 GB, so roughly **5 GB is trapped** — freed inside NixOS, not
+disk is still 9.04 GB, so roughly **5 GB is trapped** - freed inside NixOS, not
 returned to Windows. A WSL virtual disk grows but never shrinks on its own. To
 recover it, from Windows:
 
@@ -587,28 +582,28 @@ wsl --terminate NixOS
 wsl --manage NixOS --set-sparse true    # recent WSL; else diskpart / Optimize-VHD
 ```
 
-Check `wsl --manage --help` first — the flag is absent on older WSL builds. Per
+Check `wsl --manage --help` first - the flag is absent on older WSL builds. Per
 hull's boundaries this stays a **manual Windows checklist item** alongside WezTerm
 and fonts; hull never touches Windows. Once the activation-time cap is live (see
 below), the ceiling should hold and this should not need repeating often.
 
 ## What is decided (see the ADRs for the reasoning)
 
-- **0001** — target **NixOS exclusively**; two host types: `wsl` (NixOS-WSL) and
+- **0001** - target **NixOS exclusively**; two host types: `wsl` (NixOS-WSL) and
   `native` (NixOS on bare metal). WSL first, native once proven.
-- **0002** — **segmentation**: identity-agnostic, host-type-aware; zero identity
+- **0002** - **segmentation**: identity-agnostic, host-type-aware; zero identity
   in the tool; multi-account baseline; opinions vs identity are separate axes.
-- **0003** — **seam, not repo**: sealed modules (the ADR calls them "panels" —
+- **0003** - **seam, not repo**: sealed modules (the ADR calls them "panels" -
   retired term, see above); split only on a real
   second consumer; registry is the data-exception.
-- **0004** — **CLI**: thin wrappers + imperative substance; `writeShellApplication`.
-- **0005** — clean-start rewrite; v1 frozen as `hull-fedora`.
-- **0006** — **disk hygiene is event-driven on WSL**: the guest sees a fake ~1 TB
+- **0004** - **CLI**: thin wrappers + imperative substance; `writeShellApplication`.
+- **0005** - clean-start rewrite; v1 frozen as `hull-fedora`.
+- **0006** - **disk hygiene is event-driven on WSL**: the guest sees a fake ~1 TB
   of free space so pressure-driven GC never fires, and the virtual disk never
   shrinks. Cap generations at activation, dedupe continuously, reclaim in the CLI.
   Not inherited by `native`.
 
-## Known issue: `user@1000.service` fails — one root cause, three symptoms
+## Known issue: `user@1000.service` fails - one root cause, three symptoms
 
 Accurate as of **2026-07-27**. This section supersedes the 2026-07-24 diagnosis,
 which was wrong about the mechanism (see "Ruled out" below).
@@ -632,7 +627,7 @@ user units" step cannot connect → exit 4. WSL's banner is a *downstream report
 it runs `systemctl is-active user@1000.service`, sees `failed`, and prints.
 
 **Impact is cosmetic.** Despite the `failed` state the manager is actually
-running — `systemctl status` shows ~19 tasks in a populated cgroup, and
+running - `systemctl status` shows ~19 tasks in a populated cgroup, and
 `loginctl list-sessions` shows an active session. Nothing has malfunctioned.
 
 **Ruled out (do not re-investigate these):**
@@ -648,11 +643,11 @@ running — `systemctl status` shows ~19 tasks in a populated cgroup, and
 **It is genuinely upstream, and unfixed.** The same message is reported across
 Ubuntu 24.04/26.04, Arch, AlmaLinux and NixOS on WSL 2.6.1.0–2.7.3.0. Microsoft
 closed WSL #40590 (2.7.3.0, Ubuntu 26.04) as **"not planned"**. Note our journal
-evidence is *more specific* than any upstream report — none of them diagnose the
+evidence is *more specific* than any upstream report - none of them diagnose the
 cgroup layer. Two independent sources correlate it with **another WSL distro
 already running**: NixOS-WSL #888 (labelled `upstream-bug`) and WSL #40590, where
 it fails "when launching multiple instances sequentially" (`vm_4` fails, `vm_3`
-succeeds, identical configs). Intermittency is characteristic — repeat any test
+succeeds, identical configs). Intermittency is characteristic - repeat any test
 at least twice before believing the result.
 
 **Relevant issues:**
@@ -663,7 +658,7 @@ at least twice before believing the result.
 
 **CONFIRMED 2026-07-27.** With **both distros terminated** and NixOS opened alone,
 twice: no banner, `systemctl --failed` → `0 loaded units listed`, and
-`nixos-rebuild switch` completes with `Done.` — no warning, exit 0. The rebuild's
+`nixos-rebuild switch` completes with `Done.` - no warning, exit 0. The rebuild's
 user-unit step now works (`restarting the following user units:
 nixos-activation.service`), which is the direct proof of the causal chain: kill
 the trigger and all three symptoms clear together.
@@ -675,22 +670,22 @@ the trigger and all three symptoms clear together.
 wsl --terminate fedoraremix
 wsl --terminate NixOS     # so NixOS cold-boots with Fedora already gone
 ```
-Terminating NixOS too matters — resuming a NixOS session that *started* while
+Terminating NixOS too matters - resuming a NixOS session that *started* while
 Fedora was up keeps the failed unit. If you see the banner, this is why; it is not
 a regression in hull. The problem disappears permanently when Fedora retires.
 
 **Constraint this places on the environment modules:** `systemd.user` services
 work on a clean start, but will fail on any boot where Fedora was running. Until
 Phase 7, do not make `shell` / `editor` / `tools` *depend* on Home Manager user
-services. File-based config (zsh, neovim, git, starship) is unaffected either way
-— prefer it. **As built, Phase 2 obeys this**: every module is file/package
+services. File-based config (zsh, neovim, git, starship) is unaffected either
+way - prefer it. **As built, Phase 2 obeys this**: every module is file/package
 config, no user services.
 
 Note home-manager as a NixOS module does install a `home-manager-nixos.service`
 (a system unit, not a user unit), so activation does not depend on the broken
 user manager.
 
-## Session log — 2026-07-27 (Phase 1 close-out)
+## Session log - 2026-07-27 (Phase 1 close-out)
 
 What changed, so a fresh agent can see the delta rather than re-deriving it.
 
@@ -708,37 +703,37 @@ What changed, so a fresh agent can see the delta rather than re-deriving it.
   the flag itself; bare `nix` and the Phase 4 CLI need it declared).
 - `git` and `claude-code` (unfree, allowed by name not blanket `allowUnfree`).
 - Disk hygiene per ADR 0006.
-- `docs/how-it-works.md` — flakes vs modules, evaluation vs activation.
+- `docs/how-it-works.md` - flakes vs modules, evaluation vs activation.
 
 **Verified:** zero-error baseline with both distros terminated, twice. Also a
-reproducibility check — the same `nix.conf` store hash
+reproducibility check - the same `nix.conf` store hash
 (`n6qz6cc0ihib9y16g8vcl5c1kzazcsnj`) and the same system toplevel (`vhza8gd7…`)
 were computed on Fedora and produced on NixOS independently.
 
 **Two corrections worth remembering:**
 - `nix flake check` passed a config that could not build (`claude-code`'s unfree
   licence). Only `nix build --dry-run` forces package derivations. Use it as the
-  gate — this is why that rule is above.
+  gate - this is why that rule is above.
 - The first garbage collection freed 3.9 GB against a 1–2 GB estimate. Do not
   treat store growth estimates as reliable; measure.
 
-## Session log — 2026-07-27 (Phase 2 build)
+## Session log - 2026-07-27 (Phase 2 build)
 
 The first session run entirely from inside NixOS. Nothing was switched into; the
 captain runs that.
 
 **Decided:**
-- **Drop the word "panel"** — see the vocabulary section at the top.
+- **Drop the word "panel"** - see the vocabulary section at the top.
 - **Split the planned `env` module into `shell` / `editor` / `tools`.** `env` was
   a grab-bag holding shell, editor, multiplexer, CLI tools and a language
   runtime, and it collided with the system map, where "the ship's body" is hull.
 - **Phase 2 is porting, not interface design.** With one host consuming the
-  modules there is nothing to design — options exist so a *second* consumer can
+  modules there is nothing to design - options exist so a *second* consumer can
   differ, and `native` does not exist. Deferred to Phase 6. `ROADMAP.md` carries
   the full reasoning.
 - **Out-of-store symlinks for nvim and herdr config**, store-managed for
   everything else. Reasoning in `ARCHITECTURE.md`.
-- **No agent memory files on this project** — everything durable goes in these
+- **No agent memory files on this project** - everything durable goes in these
   documents.
 
 **Built:** `flake.nix` (home-manager input + NixOS module), `hosts/wsl.nix`
@@ -746,7 +741,7 @@ captain runs that.
 `modules/editor` (+ nvim lua copied from the quarry), `modules/tools`
 (+ herdr config.toml).
 
-**Dropped deliberately on port** — do not "restore" these, they were Fedora
+**Dropped deliberately on port** - do not "restore" these, they were Fedora
 artifacts:
 - `glibcLocales` override + `LOCALE_ARCHIVE` + `LANG`. Verified on NixOS:
   `LOCALE_ARCHIVE=/run/current-system/sw/lib/locale/locale-archive` and
@@ -754,19 +749,19 @@ artifacts:
   a foreign host.
 - `home.sessionPath = [ "$HOME/.local/bin" ]`. That existed for v1's imperatively
   installed `hull` launcher; Phase 4's CLI is a Nix package.
-- v1's `accountCommand` zsh function generator — that is git-identity, Phase 3.
+- v1's `accountCommand` zsh function generator - that is git-identity, Phase 3.
 
 **Verified by evaluation and by a real build (not switched):**
 - `nixos-rebuild build --flake .#wsl` → `Done.`, exit 0.
 - Login shell resolves to `zsh-5.9.1`.
 - User packages resolve: fd, fzf, herdr 0.7.5, jq, lazygit, neovim 0.12.4,
   nodejs 22.23.1, ripgrep, starship, zsh.
-- Both out-of-store links resolve into the working tree —
+- Both out-of-store links resolve into the working tree -
   `~/.config/nvim → /home/nixos/hull/modules/editor/nvim` and
   `~/.config/herdr/config.toml → /home/nixos/hull/modules/tools/herdr/config.toml`.
 - `herdr` confirmed absent from 26.05, present in unstable at 0.7.5.
 
-**Not verified — needs a human in the shell:** the prompt, autosuggestions,
+**Not verified - needs a human in the shell:** the prompt, autosuggestions,
 keybindings, nvim actually launching and lazy.nvim fetching plugins, herdr
 running. That is the first task of the next session.
 
@@ -775,13 +770,13 @@ under "these derivations will be built", implying a long source compile.
 Substitutability checks and the real build both disproved it. The dry-run's
 build/fetch split is not a reliable cost estimate.
 
-## Session log — 2026-07-28 (Phase 2 switch, VS Code, identity)
+## Session log - 2026-07-28 (Phase 2 switch, VS Code, identity)
 
 **Switched into Phase 2.** `sudo nixos-rebuild switch --flake ~/hull#wsl`
 completed `Done.` at exit 0. Two things in the output worth noting: `removing
 profile version 7` (the generation cap firing unattended, first observation of it
 during a real switch) and `restarting the following user units:
-nixos-activation.service` — the user-unit step that normally fails, working,
+nixos-activation.service` - the user-unit step that normally fails, working,
 because Fedora was not running.
 
 **Verified live afterwards**, rather than by evaluation:
@@ -793,31 +788,31 @@ because Fedora was not running.
   the store and is misleading. Use `readlink -f`.
 - Generations 8, 9, 10 held.
 
-**Added `programs.nix-ld.enable`** to fix VS Code Remote-WSL — full reasoning in
+**Added `programs.nix-ld.enable`** to fix VS Code Remote-WSL - full reasoning in
 its own section above.
 
-**Decided the identity** — `alx`, noreply emails on both accounts. Full reasoning
+**Decided the identity** - `alx`, noreply emails on both accounts. Full reasoning
 in its own section above. The burnish numeric id is verified against the API; the
 flintec one is not.
 
 **Reviewed the v1 registry** (`flake.nix` + `profile.nix`, pasted from the Fedora
 machine). Three things must not carry over:
-1. `hull.url = "path:/home/adam/burnish-studio/hull-fedora"` — an absolute path
+1. `hull.url = "path:/home/adam/burnish-studio/hull-fedora"` - an absolute path
    containing the old username, pointing at the frozen v1. This *is* "Gap C".
 2. **The dependency direction is inverted.** v1 had registry depending on hull
    (registry's flake took hull as an input and called `hull.lib.mkHome`). The
    design in `ARCHITECTURE.md` has **hull taking registry as an input**, so
-   registry becomes pure data. The flip is correct — hull produces
-   `nixosConfigurations` and owns the hosts — and was confirmed by the captain
+   registry becomes pure data. The flip is correct - hull produces
+   `nixosConfigurations` and owns the hosts - and was confirmed by the captain
    2026-07-28.
 3. `fullName = "alex"` with `hosts.wsl.username = "adam"` and
-   `hosts.laptop.username = "alex"` — the exact naming drift `alx` resolves.
+   `hosts.laptop.username = "alex"` - the exact naming drift `alx` resolves.
 
 Worth keeping from it: the `accounts` structure, org/alias/key naming (matches
 D1.5), and `default = true` on burnish.
 
 **Inventoried the home directory.** Almost everything in it is imperative runtime
-state written by tools, not by Nix — see "What Nix owns" above. `.copilot` is a
+state written by tools, not by Nix - see "What Nix owns" above. `.copilot` is a
 single lock file from a VS Code extension pushed in from the Windows side; the
 captain did not ask for it and does not intend to use it. Uninstalling the
 extension (or disabling it for the remote) stops it reappearing. Nothing to do on
@@ -847,8 +842,6 @@ is fully specified there.
 
 ## What is NOT done
 
-- **The em dash sweep is agreed but not started.** Fully specified under "House
-  style" below. It is the next task.
 - **The interactive environment has still not been fully lived in.** The switch
   is done and everything resolves, but the prompt, autosuggestions, `nvim`
   actually launching and fetching its pinned plugins, and `herdr` running are all
@@ -859,9 +852,9 @@ is fully specified there.
 - **The two GitHub email-privacy settings are not enabled yet** on either
   account. Until *Block command-line pushes that expose my email* is on, nothing
   structurally prevents a misconfigured repo from publishing a private address.
-- **Git identity is repo-local to `~/hull` only** — every other repo on this
+- **Git identity is repo-local to `~/hull` only** - every other repo on this
   machine, including `hull-fedora`, still cannot commit.
-- **Module options are undesigned**, deliberately — Phase 6, when `native` shows
+- **Module options are undesigned**, deliberately - Phase 6, when `native` shows
   what needs to vary.
 - **nvim plugins are pinned but not Nix-managed** (corrected 2026-07-28).
   `lua/plugin.lua` bootstraps lazy.nvim, which git-clones plugins into
@@ -876,15 +869,15 @@ is fully specified there.
 - **`git-identity` (Phase 3) and `agents` (Phase 5) modules do not exist.**
 - **Registry ↔ flake wiring** is unsolved (registry has no GitHub remote yet;
   must avoid v1's hardcoded-path "Gap C"). Note `modules/paths.nix` now solves
-  the *same class* of problem for out-of-store links — reuse the pattern.
+  the *same class* of problem for out-of-store links - reuse the pattern.
 - **The `hull` CLI** does not exist yet (Phase 4).
 - **The `alx` user** is not configured - current default user is `nixos`. Real
   user comes from the registry (Phase 3), though the rename can happen sooner.
-- **`hosts/native.nix`** does not exist — Phase 6.
+- **`hosts/native.nix`** does not exist - Phase 6.
 - A NixOS minimal ISO is on a USB stick ready for the laptop (Phase 6 prep).
-- **`claude-code` sits in `hosts/wsl.nix` temporarily** — it belongs in the
+- **`claude-code` sits in `hosts/wsl.nix` temporarily** - it belongs in the
   `agents` module (Phase 5).
-- **~5 GB is trapped in the WSL virtual disk** — one manual Windows-side
+- **~5 GB is trapped in the WSL virtual disk** - one manual Windows-side
   compaction recovers it.
 - **Fedora is still installed and holds 78.47 GB.** Retirement deferred by the
   captain 2026-07-27 pending a migration pass. Do not delete it unprompted.
@@ -897,17 +890,17 @@ holds only the detail that does not fit there.
 **On Phase 3 - `git-identity`.** This is the real deep-module work, and it
    is gated on one thing outside the code: **the registry has no GitHub remote.**
    Pushing it to a private repo is the prerequisite. Read the Phase 3
-   carry-forward constraints in `ROADMAP.md` before designing anything — D1.3
+   carry-forward constraints in `ROADMAP.md` before designing anything - D1.3
    (port 443 unconditionally) and D1.5 (org-based naming) are non-obvious and
    were paid for once already.
 
 **On mining `hull-fedora`:** a note in the previous handover said `home/` holds
 only `AGENTS.md` and that everything is inline in a monolithic `home.nix`. That
 is half right and was corrected 2026-07-27. `home/.config/` does hold tidy,
-portable `nvim/`, `wezterm/` and `herdr/` configs — those copied across as files.
+portable `nvim/`, `wezterm/` and `herdr/` configs - those copied across as files.
 What *is* inline in `home.nix` is the git-identity logic (accounts → gitconfig
 includes, URL rewrites, ssh blocks, the per-account shell functions), roughly
-lines 9–104 and 165–196. That extraction is Phase 3's work — budget for it there,
+lines 9–104 and 165–196. That extraction is Phase 3's work - budget for it there,
 not before.
 
 ## House style (adopted 2026-07-28)
@@ -936,24 +929,19 @@ invisible.
 - Explain the tradeoffs and get explicit approval before spawning a large swarm
   of subagents.
 
-### ⚠️ PENDING: the em dash sweep
+### The em dash sweep is done (2026-07-28)
 
-Agreed but **not started**. Two passes, roughly 256 instances:
+All 256 instances across the 12 files are converted, in one commit of its own.
+`docs/adr/*.md` were left alone as historical records, for the same reason they
+still say "panel". The 12 en dashes (`–`) are untouched; they are all numeric and
+section ranges.
 
-1. Replace `' — '` with `' - '` across these 12 files: `HANDOVER.md`,
-   `ROADMAP.md`, `ARCHITECTURE.md`, `CONTEXT.md`, `README.md`,
-   `docs/how-it-works.md`, `flake.nix`, `hosts/wsl.nix`, `modules/paths.nix`,
-   and the three `modules/*/default.nix`.
-2. Re-read this section and put back any character it ate. The rule above quotes
-   an em dash as its own subject, so a blind pass mangles it. Trivial to fix on a
-   second look; not worth engineering around.
-
-Leave `docs/adr/*.md` alone - historical records, same reason they still say
-"panel". Leave en dashes (`–`) alone; they are all numeric and section ranges.
-
-Then run the build gate (six `.nix` files are in scope, comments only), commit on
-its own, and **delete this section** - a finished task should not sit here
-pretending to be pending.
+Two things a future sweep of this kind should know, because the specified
+`' — ' → ' - '` pattern would have missed both: 18 of the 256 were **not**
+surrounded by spaces (line-wrap cases, where the dash sits at the end or start of
+a line), and one of those was line-**initial**, which a blind replacement turns
+into a markdown bullet. That paragraph was re-wrapped instead. The rule above,
+which quotes an em dash as its own subject, was restored by hand as expected.
 
 ## Working with the captain (alx)
 
@@ -991,10 +979,10 @@ pretending to be pending.
 ## Tooling note
 
 **Corrected 2026-07-27.** A previous version of this file said project skills
-(`/grill-with-docs` etc.) live in `hull-fedora/.claude/skills/`. They do not —
+(`/grill-with-docs` etc.) live in `hull-fedora/.claude/skills/`. They do not -
 that clone has no `.claude/` directory; only `home/.claude/settings.json` and
 `home/.claude/statusline-command.sh` are tracked. The skills were installed on
-the Fedora machine via `npx` (Matt Pocock's set — grill-with-docs and the ADR
+the Fedora machine via `npx` (Matt Pocock's set - grill-with-docs and the ADR
 format) and were never committed anywhere. They are reinstallable from source, so
 nothing is lost; do not go looking for them in the repo.
 

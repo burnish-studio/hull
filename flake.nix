@@ -1,15 +1,15 @@
 {
-  description = "hull — reproducible NixOS dev environment (wsl + native)";
+  description = "hull - reproducible NixOS dev environment (wsl + native)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     # A second, unpinned nixpkgs for the few tools that must track upstream faster
     # than a release branch allows. Take individual packages from `unstable`
-    # deliberately — never make it the default source.
+    # deliberately - never make it the default source.
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    # Track the release branch matching nixpkgs, not `main` — `main` drifts into
+    # Track the release branch matching nixpkgs, not `main` - `main` drifts into
     # the next release's development while nixpkgs stays on 26.05. The ref is the
     # update policy; flake.lock supplies the reproducibility.
     nixos-wsl = {

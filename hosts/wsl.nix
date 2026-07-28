@@ -1,28 +1,28 @@
-# Host type: NixOS-WSL. No GUI — the Windows-side wrapper (WezTerm, fonts)
+# Host type: NixOS-WSL. No GUI - the Windows-side wrapper (WezTerm, fonts)
 # stays manual and out-of-tree; hull never touches Windows.
 { config, lib, pkgs, unstable, ... }:
 {
   wsl.enable = true;
   wsl.defaultUser = "nixos"; # replaced with the registry-injected user in Phase 3
 
-  # `nixos-rebuild --flake` passes these itself, so rebuilds work without them —
+  # `nixos-rebuild --flake` passes these itself, so rebuilds work without them -
   # but bare `nix` (flake update/check, and the Phase 4 `hull` CLI per ADR 0004)
   # does not. Declare them so the machine does not depend on installer state.
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # git: clone hull locally so rebuilds run from a path, not the GitHub fetcher
-  # (which can serve a stale commit — see HANDOVER, rebuild workflow).
+  # (which can serve a stale commit - see HANDOVER, rebuild workflow).
   # gh: authentication for the private `hull-fedora` quarry and for pushing.
   # Already a declared runtime dep of `hull account add` (ADR 0004), so this is
   # pulling a known-needed tool forward, not a new dependency.
-  # claude-code: hull is developed on the machine it configures. Temporary home —
+  # claude-code: hull is developed on the machine it configures. Temporary home -
   # this moves into the `agents` module in Phase 5.
   # Taken from `unstable`, not the 26.05 pin: a Nix-installed binary cannot
   # self-update, and Claude Code ships often enough that the release branch goes
-  # stale in weeks (26.05 had 2.1.187 while unstable had 2.1.220 — old enough to
+  # stale in weeks (26.05 had 2.1.187 while unstable had 2.1.220 - old enough to
   # not list the current models). Unstable still lags upstream somewhat; that is
   # accepted. It is one of two packages taken from unstable (herdr is the other,
-  # in modules/tools) — see flake.nix.
+  # in modules/tools) - see flake.nix.
   #
   # These are SYSTEM packages, not user packages, on purpose: `sudo nixos-rebuild`
   # runs as root and needs `git` to read a flake from a git repo. A git installed
@@ -32,19 +32,19 @@
   # --- Foreign binaries ---------------------------------------------------------
   # VS Code Remote-WSL injects a server into ~/.vscode-server*/ from the Windows
   # side: a generic-linux prebuilt `node` that asks for the interpreter
-  # /lib64/ld-linux-x86-64.so.2. NixOS is not FHS, so that path holds `stub-ld` —
+  # /lib64/ld-linux-x86-64.so.2. NixOS is not FHS, so that path holds `stub-ld` -
   # a decoy whose only job is to print "cannot run dynamically linked executables"
   # and point at https://nix.dev/permalink/stub-ld. nix-ld replaces the decoy with
   # a real loader and supplies a base library set (libstdc++, zlib, openssl, curl,
-  # systemd — see nixos/modules/programs/nix-ld.nix), which is what node needs.
+  # systemd - see nixos/modules/programs/nix-ld.nix), which is what node needs.
   #
   # Chosen over nix-community/nixos-vscode-server, which patchelfs the server via
-  # a systemd USER service — precisely what HANDOVER forbids depending on while
+  # a systemd USER service - precisely what HANDOVER forbids depending on while
   # the user@1000 bug lives. nix-ld is a system-level setting, so it is immune.
   #
   # This does not breach "hull never touches Windows": VS Code runs over there and
   # connects inward; hull only permits the injected binary to execute. The server
-  # itself is downloaded imperatively and is NOT reproducible from this repo —
+  # itself is downloaded imperatively and is NOT reproducible from this repo -
   # same category as lazy.nvim's plugins (see modules/editor), already accepted.
   #
   # Lives at the host layer, not in a module: `native` does not exist yet, so
@@ -81,7 +81,7 @@
   # never sees disk pressure and Nix's pressure-driven GC (min-free/max-free) can
   # never fire. And a WSL virtual disk grows but never shrinks, so the *peak* store
   # size is what permanently costs Windows disk. Hygiene must therefore be tied to
-  # the event that grows the store — the rebuild — not to a schedule or threshold.
+  # the event that grows the store - the rebuild - not to a schedule or threshold.
   # Do NOT copy this to hosts/native.nix: on a real disk, min-free/max-free is the
   # better mechanism and this is unnecessary.
 
@@ -91,9 +91,9 @@
   # Cap generations on every activation. This runs on any `nixos-rebuild switch`
   # however it was invoked, so the ceiling cannot be bypassed. Deleting generation
   # symlinks is instant. Capping is the precondition for garbage collection being
-  # effective at all — GC can only reclaim what no surviving generation pins.
+  # effective at all - GC can only reclaim what no surviving generation pins.
   # Keep 3: current, previous, and one spare last-known-good. Losing older ones
-  # costs time, not recoverability — any past system rebuilds from any git commit.
+  # costs time, not recoverability - any past system rebuilds from any git commit.
   # `|| true` so a failure here can never fail a rebuild.
   system.activationScripts.hullCapGenerations = ''
     ${config.nix.package}/bin/nix-env \

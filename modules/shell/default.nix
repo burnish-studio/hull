@@ -2,7 +2,7 @@
 #
 # Everything here is expressed as Home Manager options, so it is generated into
 # the Nix store and takes effect on rebuild. Nothing in this module is edited
-# live — that distinction matters, see modules/paths.nix.
+# live - that distinction matters, see modules/paths.nix.
 #
 # Setting `programs.zsh.enable` here does NOT make zsh the login shell; that is
 # a NixOS-level fact about the user account and lives in hosts/<host>.nix.
@@ -16,7 +16,7 @@
       bindkey '^f' autosuggest-accept
     '';
     # Phase 3 adds one generated function per account here (v1's `accountCommand`
-    # in hull-fedora/home.nix) — it needs registry data, so it is not ported yet.
+    # in hull-fedora/home.nix) - it needs registry data, so it is not ported yet.
     shellAliases = {
       ".." = "cd ..";
       add = "git add .";

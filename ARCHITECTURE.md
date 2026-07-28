@@ -16,7 +16,7 @@ flake.nix        * inputs (nixpkgs, nixpkgs-unstable, nixos-wsl, home-manager;
                    packages.hull
 hosts/
   wsl.nix        * host type: NixOS-WSL (no GUI; the Windows wrapper stays
-                   manual / out-of-tree — hull never touches Windows)
+                   manual / out-of-tree - hull never touches Windows)
   native.nix       host type: NixOS on bare metal (Wayland, fonts, GUI, wezterm)
 modules/           sealed concerns, each with a small typed interface
   paths.nix      * one shared option: where hull is checked out on this machine.
@@ -27,7 +27,7 @@ modules/           sealed concerns, each with a small typed interface
   git-identity/    Generator (accounts → gitconfig/ssh) + its Home Manager adapter;
                    consumes the registry
   agents/          claude config, AGENTS.md, statusline
-lib/               pure helpers — e.g. the git-identity Generator as a pure function,
+lib/               pure helpers - e.g. the git-identity Generator as a pure function,
                    shared by its module adapter and by the CLI
 cli/               the `hull` command, a writeShellApplication (see ADR 0004)
 docs/adr/        * decision records
@@ -37,7 +37,7 @@ The **registry** is a separate private repo (identity data), wired in as a flake
 input.
 
 **Why `shell` / `editor` / `tools` and not one `env` module** (decided
-2026-07-27): `env` was a grab-bag name — it held shell, editor, multiplexer, CLI
+2026-07-27): `env` was a grab-bag name - it held shell, editor, multiplexer, CLI
 tools and a language runtime, and "environment" is what all of hull produces, so
 the name distinguished nothing. It also collided with the system map, where "the
 ship's body" is hull itself. Three obvious names beat one vague one, the modules
@@ -66,7 +66,7 @@ Windows side and Nix does not manage it at all; on `native` it belongs in
   rebuild. Config iterated on constantly (nvim's lua, herdr's toml) is linked
   straight to the working tree via `mkOutOfStoreSymlink`, so edits are live. The
   exception costs atomic rollback for those files and requires hull to know its
-  own path on disk — hence the single `hull.repoPath` option in `modules/paths.nix`
+  own path on disk - hence the single `hull.repoPath` option in `modules/paths.nix`
   rather than v1's hardcoded `~/.dotfiles`.
 - **The CLI wraps native Nix; it never re-implements it** (ADR 0004). `switch` /
   `diff` / `rollback` / `status` are thin wrappers; `account` / `doctor` are the
@@ -76,14 +76,14 @@ Windows side and Nix does not manage it at all; on `native` it belongs in
 - **Foreign binaries are permitted at the host layer, not designed for.** NixOS
   is not a Filesystem Hierarchy Standard system, so prebuilt generic-linux
   executables cannot run unaided. `programs.nix-ld` in `hosts/wsl.nix` supplies a
-  real dynamic loader so injected binaries — today, VS Code's server — work. This
+  real dynamic loader so injected binaries - today, VS Code's server - work. This
   is an escape hatch with a known cost: whatever runs through it is imperative
   and not reproducible from this repo, exactly like lazy.nvim's plugins. Keep the
   set of such things small and named.
 
 ## What NixOS gives us for free (so hull must not re-build it)
 
-Login shell, locale, PATH, packages, services — all declarative. `switch` /
-`rollback` / generations / atomic activation — all native. v1's imperative
+Login shell, locale, PATH, packages, services - all declarative. `switch` /
+`rollback` / generations / atomic activation - all native. v1's imperative
 provisioning existed only because the host was foreign; on NixOS it is deleted,
 not ported (ADR 0001).
