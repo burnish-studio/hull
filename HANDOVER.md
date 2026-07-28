@@ -9,7 +9,7 @@ environment has now been sat in by a human, which was the last outstanding claim
 A first slice of **Phase 5** is also live: `modules/agents` exists, holding
 `claude-code` and the Claude Code status line.
 
-Running **generation 11**. zsh is the login shell, all user packages resolve, and
+Running **generation 12**. zsh is the login shell, all user packages resolve, and
 all four out-of-store symlinks (nvim, herdr, claude settings, claude statusline)
 resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
 
@@ -29,7 +29,7 @@ the registry has no GitHub remote.
 this repo and has done so mid-session before. See "Two machines" below.
 
 If something is wrong, `sudo nixos-rebuild switch --rollback` returns you to
-generation 10, the known-good pre-`agents` system.
+generation 11, the known-good pre-pi system (generation 10 predates `agents` entirely).
 
 ### ⚠️ A collision is waiting in Phase 3
 
