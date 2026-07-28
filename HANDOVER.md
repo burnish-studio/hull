@@ -1,6 +1,6 @@
 # Handover - for an agent picking this up cold
 
-Accurate as of **2026-07-28**, end of the Phase 2 switch-and-verify session.
+Accurate as of **2026-07-28**, end of the house-style sweep session.
 
 ## One-line state
 
@@ -11,7 +11,8 @@ resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
 
 Phase 2 was **committed and pushed 2026-07-28** - the first commits ever authored
 from the NixOS machine, using the identity decided that day. Everything through
-`3b6291e` is on `origin/main`; the working tree is clean.
+**`2eecde4`** is on `origin/main`; the working tree is clean, and the local branch
+is level with the remote.
 
 ### ⚠️ Start here
 
@@ -30,6 +31,34 @@ this repo and has done so mid-session before. See "Two machines" below.
 
 If something is wrong, `sudo nixos-rebuild switch --rollback` returns you to
 generation 9, the known-good pre-Phase-2 system.
+
+### ⚠️ Before closing shop
+
+**Every session updates this file before it ends** (captain's instruction,
+2026-07-28). This is not optional housekeeping - it is the mechanism the whole
+project runs on. There are no agent memory files here, so a session that ends
+without writing back has genuinely lost what it learned, and the next agent pays
+to rediscover it. Several claims in this file were wrong until someone checked;
+the cost of that is exactly what this rule exists to stop.
+
+Work through these at the end of a session:
+
+1. **The date and the state block** at the top - the commit `origin/main` is on,
+   whether the tree is clean, the running generation.
+2. **"Start here"** - re-order it for whoever comes next, and delete anything
+   now done. A finished task must not sit here pretending to be pending.
+3. **"What is NOT done"** - add what you discovered was missing, remove what you
+   finished.
+4. **A session log entry** - what changed, what was decided, and what you
+   verified versus what you only evaluated. Follow the existing entries.
+5. **Corrections** - if you found something in this file that was false, fix it
+   where it lives *and* say so in the session log. A silent fix teaches nobody.
+6. **Re-measure anything you quoted** - disk figures especially. They go stale
+   within days and this file has carried contradictory numbers before.
+
+Then commit. Documentation changes ride along with the work that caused them,
+unless the change is large enough to bury the diff - the house-style sweep was
+its own commit for exactly that reason.
 
 ## Identity - decided 2026-07-28
 
@@ -539,13 +568,20 @@ and are now stale by that much at least; the virtual disk only grows, so treat
 9.04 GB as a floor, not a current reading. Re-measure from Windows before making
 any disk decision.
 
-**VS Code costs 675 MB, outside the Nix store (measured 2026-07-28).**
-`~/.vscode-server-insiders` is the single largest thing in the home directory -
-larger than the entire Phase 2 closure addition - and it is imperative,
-non-reproducible, and permanent virtual-disk growth. Not an argument against
-using VS Code; a number that belongs in any disk decision, because store
-measurements (`du -sh /nix/store`) do not see it. Measure the home directory
-separately: `du -sh ~/.[a-zA-Z]* | sort -rh | head`.
+**Re-measured 2026-07-28 (guest side, end of the style-sweep session):** the
+store is **6.3 GB** and the guest reports **7.3 GB used**. So the store grew
+~200 MB and the guest ~900 MB in a day, on a session that added no packages at
+all - the difference is `nixos-rebuild build` leaving a `./result` closure plus
+ordinary cache and VS Code server growth. Worth knowing before attributing
+growth to whatever the session happened to be doing.
+
+**VS Code costs 678 MB, outside the Nix store (measured 2026-07-28, unchanged
+within a day at 675-678 MB).** `~/.vscode-server-insiders` is the single largest
+thing in the home directory - larger than the entire Phase 2 closure addition -
+and it is imperative, non-reproducible, and permanent virtual-disk growth. Not an
+argument against using VS Code; a number that belongs in any disk decision,
+because store measurements (`du -sh /nix/store`) do not see it. Measure the home
+directory separately: `du -sh ~/.[a-zA-Z]* | sort -rh | head`.
 
 Headroom is **tight and moving**: the roadmap recorded 67.5 GB free on 2026-07-24,
 so the NixOS install consumed ~8 GB in three days. Bounding growth is therefore
@@ -840,6 +876,49 @@ is fully specified there.
   recommendation ("adopt deliberately or not at all") on a question that was
   actually easy.
 
+## Session log - 2026-07-28 (the house-style sweep)
+
+A short session: read the project cold, then executed the em dash sweep that the
+previous session had specified. Commit `2eecde4`, pushed.
+
+**Done:** all 256 em dashes converted across the 12 files in scope. `docs/adr/*`
+left alone as historical records; the 12 en dashes untouched.
+
+**The specified pattern was incomplete, and this is the reusable lesson.** The
+sweep was written as "replace `' — '` with `' - '`". That would have missed
+**18 of the 256**, which are not surrounded by spaces because the dash landed at
+the end or the start of a wrapped line. Worse, one was line-*initial*, where a
+blind replacement produces `- ` at the start of a markdown line and silently
+converts a sentence into a bullet. That paragraph (in the `user@1000` constraint
+section) was re-wrapped instead. **When sweeping a character out of prose, match
+the character, not a spaced instance of it, and check for line-initial hits.**
+
+**Build gate:** `nixos-rebuild build --flake .#wsl` at exit 0, producing
+`7q2ssf8v7xdr63q79wp0lhw1i2vvgvia` - **byte-identical to running generation 10**.
+That is a stronger result than the gate usually gives: it proves the six `.nix`
+files changed nothing evaluable, rather than merely proving they still build. A
+useful trick to reuse whenever a change is meant to be inert.
+
+Note the sweep spec said the `.nix` files were "comments only". Nearly true -
+`flake.nix`'s `description` is a string, not a comment. The identical toplevel
+confirms it makes no difference, since flake description is metadata that never
+reaches the system closure.
+
+**Corrected in this file:** the state block claimed everything through `3b6291e`
+was on `origin/main`, which was two commits stale and was the first thing a cold
+agent would read. Now `2eecde4`.
+
+**Verified live** (not evaluated): generation 10 running with 8, 9, 10 held;
+zsh the login shell; both out-of-store symlinks resolving into the working tree;
+`systemctl --failed` empty; git 2.54.0, gh 2.96.0, claude-code 2.1.220.
+
+**Found, and it sharpens an existing item:** `~/.local/share/nvim` does not exist
+at all, so nvim has never been launched here. See "What is NOT done".
+
+**Adopted:** the close-out convention at the top of this file - every session
+updates HANDOVER before it ends. The captain's instruction, and the natural
+consequence of this project having no agent memory files.
+
 ## What is NOT done
 
 - **The interactive environment has still not been fully lived in.** The switch
@@ -847,6 +926,14 @@ is fully specified there.
   actually launching and fetching its pinned plugins, and `herdr` running are all
   still unconfirmed by a human sitting in the shell. Correctness here is
   experiential and no amount of evaluation substitutes for it.
+  **Hard evidence, checked 2026-07-28: `~/.local/share/nvim` does not exist at
+  all.** Not an empty plugin directory - the directory nvim creates on its very
+  first run is absent, so `nvim` has never been started on this machine and
+  lazy.nvim has never bootstrapped. The first launch is therefore still an
+  untested step that needs network, and it is the single cheapest outstanding
+  check: run `nvim`, watch lazy.nvim install the 9 pinned plugins, confirm
+  `lazy-lock.json` is unchanged afterwards (it should be - the lock is what
+  pins them).
 - **The Linux account is still `nixos`** - rename to `alx` is planned, procedure
   recorded above.
 - **The two GitHub email-privacy settings are not enabled yet** on either
@@ -929,19 +1016,16 @@ invisible.
 - Explain the tradeoffs and get explicit approval before spawning a large swarm
   of subagents.
 
-### The em dash sweep is done (2026-07-28)
+### The em dash sweep is done (2026-07-28, commit `2eecde4`)
 
-All 256 instances across the 12 files are converted, in one commit of its own.
-`docs/adr/*.md` were left alone as historical records, for the same reason they
-still say "panel". The 12 en dashes (`–`) are untouched; they are all numeric and
-section ranges.
+All 256 instances across the 12 files converted; `docs/adr/*.md` left alone as
+historical records, and the 12 en dashes (`–`) untouched. What the sweep taught
+about doing this kind of pass is in the session log for that date.
 
-Two things a future sweep of this kind should know, because the specified
-`' — ' → ' - '` pattern would have missed both: 18 of the 256 were **not**
-surrounded by spaces (line-wrap cases, where the dash sits at the end or start of
-a line), and one of those was line-**initial**, which a blind replacement turns
-into a markdown bullet. That paragraph was re-wrapped instead. The rule above,
-which quotes an em dash as its own subject, was restored by hand as expected.
+The rule above is the one place an em dash legitimately survives, because it
+quotes the character as its own subject. Two other quotations of the pattern in
+the session log survive for the same reason. A future automated pass will hit all
+three - that is expected, and they should be put back.
 
 ## Working with the captain (alx)
 
