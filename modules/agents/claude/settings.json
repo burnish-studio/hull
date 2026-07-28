@@ -1,11 +1,25 @@
 {
-  "theme": "auto",
-  "model": "opus",
   "effortLevel": "high",
-  "tui": "fullscreen",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bash '/home/nixos/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ]
+  },
+  "model": "opus",
   "skipDangerousModePermissionPrompt": true,
   "statusLine": {
-    "type": "command",
-    "command": "bash \"$HOME/.claude/statusline.sh\""
-  }
+    "command": "bash \"$HOME/.claude/statusline.sh\"",
+    "type": "command"
+  },
+  "theme": "auto",
+  "tui": "fullscreen"
 }

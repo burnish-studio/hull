@@ -31,6 +31,20 @@
 #
 # Mouse is on by default (`ui.mouse_capture`): click to focus, right-click for
 # the pane menu, drag to select and copy, wheel to scroll.
+#
+# ⚠ herdr does NOT re-read this file on its own. After editing, run
+# `herdr server reload-config` or press `prefix+shift+r`. The out-of-store link
+# means no *rebuild* is needed; it does not mean no *reload*. This cost a round
+# trip on 2026-07-28 - the running server had loaded the file at startup and kept
+# the old keys until an explicit reload, which made a correct edit look broken.
+
+# Set by herdr itself when the first-run setup was dismissed, 2026-07-28. herdr
+# wrote it to the top of this file; it is kept as a real decision (do not show
+# onboarding again) and simply moved somewhere sensible. Worth noting as the
+# first live case of an application writing into hull through an out-of-store
+# link - it appeared in `git status` immediately, which is the intended
+# behaviour, not a surprise.
+onboarding = false
 
 [keys]
 # Not listed in `herdr --default-config`, so it is set rather than assumed.

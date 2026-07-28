@@ -187,10 +187,24 @@ live; the content half is not.
 - [x] Client-scoped entries dropped on port - a `WebFetch` domain allowance and
       an enabled plugin. Project-scoped settings belong in that project's own
       `.claude/settings.json`, not in hull, and the domain named a client.
+- [x] `pi` (`pi-coding-agent`) added as the second agent harness, for
+      non-Anthropic models. MIT, so no unfree allowance. Settles the policy:
+      **agent CLIs come from `unstable`, everything else takes the pin** - they
+      cannot self-update and go stale against the model APIs they talk to.
+- [x] `python3` declared - a hard dependency of herdr's agent-state hooks, which
+      install successfully and then silently do nothing without it.
+- [ ] **Trigger `herdr integration install <agent>` declaratively** from a Home
+      Manager activation script, one per declared agent. Declarative trigger,
+      imperative content: herdr owns and versions the hook scripts, so hull must
+      not vendor them. This also fixes the hardcoded `/home/<user>/` path herdr
+      writes into the hook registration, by regenerating it per machine.
+      Deliberately deferred - with one host and the command already run by hand
+      there is no blocker yet. Do it at Phase 6, or when a third agent arrives.
 - [ ] Adopt Kun's **one-source-three-targets** pattern (reviewed 2026-07-28): a
       single `AGENTS.md` in the repo, linked out-of-store to `.claude/CLAUDE.md`,
       `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. One source of truth,
-      every agent tool reads it. See `~/dotfiles/home.nix`.
+      every agent tool reads it. See `~/dotfiles/home.nix`. Note `pi` is a fourth
+      target now - its instructions file should join the same link set.
 - [ ] Extract the house style (adopted 2026-07-28, currently recorded in
       HANDOVER) into hull's own `AGENTS.md`, and link it to the three agent
       tools. This is a *content* decision - what hull's agent instructions

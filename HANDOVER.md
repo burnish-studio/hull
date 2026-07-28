@@ -1032,6 +1032,71 @@ The `Esc`-to-save binding is a fair candidate to revisit at the same time. Both
 live in `modules/editor/nvim/lua/keys.lua`, which is out-of-store, so it is an
 edit with no rebuild.
 
+**herdr's agent integrations, and where they belong.** herdr can learn an agent's
+real state (idle / working / needs attention) instead of guessing from process
+detection, if the agent reports it. `herdr integration install claude` writes a
+hook to `~/.claude/hooks/herdr-agent-state.sh` and registers it as a
+`SessionStart` hook in `~/.claude/settings.json` - which is now hull's file, so
+the change appeared as a git diff immediately. That is the out-of-store design
+working exactly as intended.
+
+**The integration installed and did nothing.** Its fourth guard is
+`command -v python3 || exit 0`, and this machine had no python3. It would have
+run on every session start and silently reported nothing, with herdr quietly
+falling back to the weaker mechanism. `python3` is now declared in
+`modules/agents` for this reason. **Second time in one day** a ported tool
+assumed python3 exists here - the status line was the first. Treat "does this
+shell out to python3?" as a standing question for anything arriving on NixOS.
+
+**The hook script itself is deliberately NOT vendored into hull.** Its own header
+says herdr overwrites it on reinstall, it carries
+`HERDR_INTEGRATION_VERSION=7`, and herdr's settings panel reports when a copy is
+outdated. Vendoring would pin version 7 forever and mean hand-maintaining another
+project's generated code. This is *not* the `lazy-lock.json` case: that pins
+third-party plugins at versions we chose, which is reproducibility we own.
+
+**What hull should own instead** - the agent packages, their dependencies, and
+eventually the *trigger*. A Home Manager activation script running `herdr
+integration install <agent>` is declarative trigger over imperative content, and
+is the "lifecycle tool" idea from `CONTEXT.md`. Not built yet, deliberately: with
+one machine and a command already run by hand, there is no blocker to justify it.
+It earns its keep at Phase 6's second host, or when a third agent arrives.
+
+**A Gap-C-shaped problem in what herdr wrote.** The registered hook command is
+`bash '/home/nixos/.claude/hooks/herdr-agent-state.sh' session` - an absolute path
+containing the username, committed to a portable repo. **It breaks on the `nixos`
+to `alx` rename.** Do not hand-fix it; herdr overwrites the file on reinstall.
+Re-run `herdr integration install claude` after the rename and it regenerates
+correctly. The eventual activation script removes the problem entirely.
+Note also that herdr **reformats** settings.json when it touches it (keys
+alphabetised, trailing newline dropped), so expect noisy diffs there.
+
+**`pi` added as the second agent harness** (`pi-coding-agent`, MIT, so no unfree
+allowance needed). It is used for non-Anthropic models. Taken from `unstable`
+even though 26.05 *has* it - a weaker justification than herdr's absence, and
+stated in the module: 26.05 carries 0.75.4 against unstable's 0.81.1, and an
+agent CLI that cannot self-update goes stale against the model APIs it talks to,
+which is the failure claude-code already hit. **The policy this settles: agent
+CLIs track upstream, everything else takes the pin.** `pi`'s own herdr
+integration is not installed yet - it lands at
+`~/.pi/agent/extensions/herdr-agent-state.ts`.
+
+**Corrected in this file's working assumptions:** an agent claimed this session
+was running inside a herdr pane, inferred from the live snapshot showing two
+Claude panes. The process tree showed otherwise - it ran under a plain zsh from
+Windows Terminal, and the herdr panes were separate sessions. The practical
+consequence was a wrong warning that `herdr server stop` would kill the
+conversation. Check `/proc` rather than infer from a snapshot.
+
+**A trap that cost a round trip: herdr does not re-read its config on its own.**
+An edit looked broken for half an hour because the running server had loaded the
+file at startup and never reloaded. `herdr server reload-config` logs an
+`api.request` line, so the log is the way to tell whether a reload actually
+happened - absence of that line is proof it did not. Now documented in the module
+comment. Generalise it: **out-of-store means no *rebuild*, not no *reload*.**
+zsh needs a rebuild plus a new shell, nvim needs reopening, herdr needs an
+explicit reload.
+
 **Verified live, not by evaluation:** generation 11 with 9, 10, 11 held; the
 activation cap dropped 8 during the switch; all four out-of-store links resolve
 into the working tree; `claude` present in the user profile and absent from
@@ -1092,6 +1157,14 @@ previous reading the same day. Versions: git 2.54.0, gh 2.96.0, claude-code
   Font is installed and working, but it is manual and undeclared - it belongs on
   the Windows checklist alongside WezTerm. `CLAUDE_STATUSLINE_ICONS=0` falls back
   to text labels if a machine lacks it.
+- **herdr agent integrations are installed by hand, not by hull.** `claude` is
+  installed; `pi` is not. hull declares the packages and their dependencies but
+  does not yet trigger `herdr integration install`. Deliberate - see the session
+  log. The trigger belongs in a Home Manager activation script and earns its keep
+  at the second host.
+- **The claude integration's registered hook path hardcodes `/home/nixos/`** and
+  will break on the account rename. Re-run `herdr integration install claude`
+  afterwards; do not hand-edit, herdr overwrites it.
 - **~5 GB is trapped in the WSL virtual disk** - one manual Windows-side
   compaction recovers it.
 - **Fedora is still installed and holds 78.47 GB.** Retirement deferred by the
