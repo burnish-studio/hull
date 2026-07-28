@@ -170,8 +170,10 @@ routing actually works.
       every agent tool reads it. See `~/dotfiles/home.nix`.
 - [ ] Move `claude-code` out of `hosts/wsl.nix` and into this module, where it
       belongs — it sits there temporarily.
-- [ ] Decide the em-dash rule deliberately. Kun's `AGENTS.md` forbids em dashes;
-      hull's documents use them throughout. Pick one; do not inherit by accident.
+- [ ] Extract the house style (adopted 2026-07-28, currently recorded in
+      HANDOVER) into hull's own `AGENTS.md`, and link it to the three agent
+      tools. HANDOVER is the right home for it *now* - a separate file earns its
+      keep only once this module exists and something reads it.
 
 ## Phase 6 — The native host (bare metal NixOS)
 

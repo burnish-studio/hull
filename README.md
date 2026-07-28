@@ -36,6 +36,11 @@ identity-agnostic and host-type-aware (see [ADR 0002](docs/adr/0002-segmentation
 
 Rewritten greenfield from a v1 that ran on Fedora + Home Manager (imperative
 bash), now frozen for reference at `~/hull-fedora` on NixOS
-(`~/burnish-studio/hull-fedora` on the legacy Fedora distro). The overall
-structure is adapted from Kun Chen's macOS/nix-darwin dotfiles
-([github.com/kunchenguid/dotfiles](https://github.com/kunchenguid/dotfiles)).
+(`~/burnish-studio/hull-fedora` on the legacy Fedora distro).
+
+The **content** is closely derived from Kun Chen's macOS/nix-darwin dotfiles
+([github.com/kunchenguid/dotfiles](https://github.com/kunchenguid/dotfiles),
+cloned locally at `~/dotfiles`) - the zsh configuration, starship prompt, aliases
+and neovim lua are near-identical. The **structure** is hull's own: Kun has three
+flat Nix files for one Mac, where hull has `hosts/` and `modules/` because it
+serves two host types. See HANDOVER for the full comparison.

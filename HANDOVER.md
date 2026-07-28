@@ -9,17 +9,29 @@ and `modules/tools` are activated on the running system (generation 10): zsh is
 the login shell, all user packages resolve, and both out-of-store symlinks
 resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
 
-Phase 2 was **committed 2026-07-28** as the first commit ever authored from the
-NixOS machine, using the identity decided that day.
+Phase 2 was **committed and pushed 2026-07-28** - the first commits ever authored
+from the NixOS machine, using the identity decided that day. Everything through
+`3b6291e` is on `origin/main`; the working tree is clean.
 
 ### ⚠️ Start here
 
-1. **Enable the two GitHub email-privacy settings** on both accounts — see the
-   identity section below. Not done yet.
-2. **Rename the Linux account `nixos` → `alx`** — cheapest while the home
-   directory is still nearly empty, and safe now hull is pushed. Procedure below.
-3. Then **Phase 3 — `git-identity`**, still gated on the registry having no
-   GitHub remote.
+**1. The style sweep** (agreed 2026-07-28, not started). This is the next task
+and it is fully specified - see "House style" below. Do it as its own commit
+before anything else, because it touches most documents and would bury any other
+change in the diff.
+
+**2. Enable the two GitHub email-privacy settings** on both accounts - see the
+identity section. Not done yet, and the captain runs this.
+
+**3. Rename the Linux account `nixos` to `alx`** - cheapest while the home
+directory is still nearly empty, and safe now hull is pushed. Procedure below.
+Its own small session; it is the fiddliest step so far.
+
+**4. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
+the registry has no GitHub remote.
+
+**Before touching anything: `git pull`.** The Fedora machine can still push to
+this repo and has done so mid-session before. See "Two machines" below.
 
 If something is wrong, `sudo nixos-rebuild switch --rollback` returns you to
 generation 9, the known-good pre-Phase-2 system.
@@ -385,6 +397,18 @@ this repo — same category as lazy.nvim's plugins, an already-accepted compromi
 It lives at the host layer rather than in a module because `native` does not
 exist yet, so there is no second consumer to design a seam for (ADR 0003).
 Phase 6 should decide deliberately whether `native` wants it, not inherit it.
+
+**Nix syntax highlighting in VS Code** (asked 2026-07-28): the extension is
+**Nix IDE** (`jnoortheen.nix-ide`). Highlighting works with no configuration.
+
+There is a clean split worth preserving here. The **extension** is a VS Code
+artifact - installed from the Windows side, pushed into the remote, landing in
+`~/.vscode-server-insiders/extensions/`, and **not** Nix-managed. But if the
+full language-server experience is ever wanted (completion, go-to-definition,
+inline errors), the **server** is `nixd` or `nil`, and those are Nix packages
+that belong in hull - probably `modules/editor`. Editor plugin imperative, tool
+declarative. Do not install a language server by hand; add it to the module.
+Not needed for highlighting alone, so it has not been added.
 
 ## What Nix owns, and what it must not
 
@@ -799,9 +823,38 @@ captain did not ask for it and does not intend to use it. Uninstalling the
 extension (or disabling it for the remote) stops it reappearing. Nothing to do on
 the hull side.
 
+**Committed and pushed, in three commits:**
+- `fb22b3d` - Phase 2 live, nix-ld, identity decided. The first push was
+  **rejected**; see "Two machines" above for what happened and the lesson.
+- `3b6291e` - the nvim plugin lock and the Kun review findings.
+
+**Cloned Kun's dotfiles to `~/dotfiles` and reviewed the whole repo.** Findings
+recorded in their own section above. The actionable one: hull was missing
+`lazy-lock.json`, now fixed.
+
+**Adopted a house style** - there was none before. See "House style" below. The
+em dash sweep it implies is agreed but **not started**; it is the next task and
+is fully specified there.
+
+**Two corrections the captain made to the agent, both worth keeping:**
+- Do not use acronyms where a full word exists. Recorded under "Working with the
+  captain".
+- Do not describe hull's existing writing as a deliberate "house style" that
+  Kun's conventions "diverge from". There was no style; the em dashes were just
+  default agent output. Framing an accident as a decision led to a wrong
+  recommendation ("adopt deliberately or not at all") on a question that was
+  actually easy.
+
 ## What is NOT done
 
-- **The Linux account is still `nixos`** — rename to `alx` is planned, procedure
+- **The em dash sweep is agreed but not started.** Fully specified under "House
+  style" below. It is the next task.
+- **The interactive environment has still not been fully lived in.** The switch
+  is done and everything resolves, but the prompt, autosuggestions, `nvim`
+  actually launching and fetching its pinned plugins, and `herdr` running are all
+  still unconfirmed by a human sitting in the shell. Correctness here is
+  experiential and no amount of evaluation substitutes for it.
+- **The Linux account is still `nixos`** - rename to `alx` is planned, procedure
   recorded above.
 - **The two GitHub email-privacy settings are not enabled yet** on either
   account. Until *Block command-line pushes that expose my email* is on, nothing
@@ -825,8 +878,8 @@ the hull side.
   must avoid v1's hardcoded-path "Gap C"). Note `modules/paths.nix` now solves
   the *same class* of problem for out-of-store links — reuse the pattern.
 - **The `hull` CLI** does not exist yet (Phase 4).
-- **The `alex` user** is not configured — current default user is `nixos`.
-  Real user comes from the registry (Phase 3).
+- **The `alx` user** is not configured - current default user is `nixos`. Real
+  user comes from the registry (Phase 3), though the rename can happen sooner.
 - **`hosts/native.nix`** does not exist — Phase 6.
 - A NixOS minimal ISO is on a USB stick ready for the laptop (Phase 6 prep).
 - **`claude-code` sits in `hosts/wsl.nix` temporarily** — it belongs in the
@@ -838,12 +891,10 @@ the hull side.
 
 ## Immediate next step
 
-1. **Set the git identity and commit Phase 2, then push** — values in the
-   identity section above.
-2. **Enable the two GitHub email-privacy settings** on both accounts, and verify
-   the flintec numeric id while there.
-3. **Rename `nixos` → `alx`** — procedure above. Its own small session.
-4. **Then Phase 3 — `git-identity`.** This is the real deep-module work, and it
+The ordered task list is at the top of this file under "Start here". This section
+holds only the detail that does not fit there.
+
+**On Phase 3 - `git-identity`.** This is the real deep-module work, and it
    is gated on one thing outside the code: **the registry has no GitHub remote.**
    Pushing it to a private repo is the prerequisite. Read the Phase 3
    carry-forward constraints in `ROADMAP.md` before designing anything — D1.3
@@ -859,6 +910,51 @@ includes, URL rewrites, ssh blocks, the per-account shell functions), roughly
 lines 9–104 and 165–196. That extraction is Phase 3's work — budget for it there,
 not before.
 
+## House style (adopted 2026-07-28)
+
+hull had **no** house style before this date. Documents were written in whatever
+the agent produced by default, which is why they are full of em dashes - that was
+never a decision anyone made. The captain adopted Kun's base conventions as a
+working default, explicitly **"not gospel today forever"**: they are expected to
+change, which is why they live here in a diffable document rather than anywhere
+invisible.
+
+**The rules, from `~/dotfiles/home/AGENTS.md`:**
+- **Never use the em dash `—`. Use a plain dash `-`.**
+- Never auto-add an agent name as a commit co-author. *(already hull's rule)*
+- Never hand-edit auto-generated files.
+- On technical decisions, do not weight development cost heavily. Prefer quality,
+  simplicity, robustness and long-term maintainability.
+- For one-off or infrequent operational work, take the simplest direct
+  end-to-end path. Do not build wrappers, control planes, policy layers or
+  automation until the direct path exposes a concrete blocker. *(this is already
+  how hull is built - ADR 0003's "split only on a real second consumer" is the
+  same instinct)*
+- When fixing a bug, reproduce it end-to-end as the user experiences it first.
+- Fix lint failures, test failures and flakiness you encounter, even when
+  unrelated to the task in hand.
+- Explain the tradeoffs and get explicit approval before spawning a large swarm
+  of subagents.
+
+### ⚠️ PENDING: the em dash sweep
+
+Agreed but **not started**. Two passes, roughly 256 instances:
+
+1. Replace `' — '` with `' - '` across these 12 files: `HANDOVER.md`,
+   `ROADMAP.md`, `ARCHITECTURE.md`, `CONTEXT.md`, `README.md`,
+   `docs/how-it-works.md`, `flake.nix`, `hosts/wsl.nix`, `modules/paths.nix`,
+   and the three `modules/*/default.nix`.
+2. Re-read this section and put back any character it ate. The rule above quotes
+   an em dash as its own subject, so a blind pass mangles it. Trivial to fix on a
+   second look; not worth engineering around.
+
+Leave `docs/adr/*.md` alone - historical records, same reason they still say
+"panel". Leave en dashes (`–`) alone; they are all numeric and section ranges.
+
+Then run the build gate (six `.nix` files are in scope, comments only), commit on
+its own, and **delete this section** - a finished task should not sit here
+pretending to be pending.
+
 ## Working with the captain (alx)
 
 - **He drives the terminal himself** via `! <cmd>` or his NixOS terminal tab
@@ -870,9 +966,18 @@ not before.
   When you diverge, say so and justify it.
 - **Minimalism first.** No bloat, no speculative features. If it's not needed
   yet, don't add it.
-- **Write acronyms out in full** where a full version exists — "garbage
+- **Write acronyms out in full** where a full version exists - "garbage
   collection", not "GC"; "Home Manager", not "HM". He should not have to guess
   at an abbreviation to read an explanation.
+- **Follow the house style above.** It is a working default, not doctrine, and
+  he expects it to evolve.
+- **He is learning NixOS as this is built.** Explain mechanisms, not just
+  conclusions - what "unfree" means, what a rebuild does and does not touch, why
+  a symlink makes a file appear in two places. He asks good questions when given
+  something to grip.
+- **Verify, do not assert.** Several claims in this file were wrong until
+  checked: the SIGCHLD root cause, the "five settings" host description, plugins
+  being irreproducible. Check the machine, then write it down.
 - **Don't add co-author lines to git commits** on this repo.
 
 ## Hard boundaries (do not cross)
