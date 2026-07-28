@@ -1,9 +1,41 @@
 # Host type: NixOS-WSL. No GUI - the Windows-side wrapper (WezTerm, fonts)
 # stays manual and out-of-tree; hull never touches Windows.
 { config, lib, pkgs, unstable, ... }:
+let
+  # ⚠️ The one place hull holds identity, and it is deliberately temporary.
+  #
+  # ADR 0002.A says zero identity in the tool - no name or account - because the
+  # registry is meant to be the single source. This binding breaches that, and
+  # was taken knowingly 2026-07-28 rather than left to drift: the account rename
+  # is a fiddly OS-level operation (move the home directory, activate, terminate
+  # the distro) and doing it now keeps it isolated. The alternative was to let
+  # Phase 3 perform the rename *and* the registry wiring in a single switch,
+  # which is two risky things at once.
+  #
+  # Phase 3 replaces this line with `registry.hosts.wsl.username` and nothing
+  # else in this file changes - which is the whole reason it is bound once here
+  # rather than written out at each of the three use sites below.
+  username = "alx";
+in
 {
   wsl.enable = true;
-  wsl.defaultUser = "nixos"; # replaced with the registry-injected user in Phase 3
+  wsl.defaultUser = username;
+
+  # A hostname answers "which machine is this?", so it has to distinguish this
+  # host from the Phase 6 one. `hull` and `nixos` both fail that test - both
+  # machines will be running hull, on NixOS. The host *type* is the axis that
+  # actually separates them, and it already names the flake attribute
+  # (`nixosConfigurations.wsl`) and the registry's `hosts.wsl` key, so the
+  # machine's name matches its configuration's name.
+  #
+  # ADR 0002.A also lists hostname as identity, but 0002.C makes hull explicitly
+  # host-type-aware. "wsl" is host type, not identity; a name like "alx-laptop"
+  # would be the breach that clause is guarding against.
+  #
+  # Previously inherited rather than declared: NixOS-WSL defaults
+  # `wsl.wslConf.network.hostname` to `config.networking.hostName`, so this value
+  # also lands in /etc/wsl.conf.
+  networking.hostName = "wsl";
 
   # `nixos-rebuild --flake` passes these itself, so rebuilds work without them -
   # but bare `nix` (flake update/check, and the Phase 4 `hull` CLI per ADR 0004)
@@ -53,7 +85,7 @@
   # Home Manager's `programs.zsh` configures zsh but cannot change the login
   # shell, which is a property of the user account in /etc/passwd.
   programs.zsh.enable = true;
-  users.users.nixos.shell = pkgs.zsh;
+  users.users.${username}.shell = pkgs.zsh;
 
   # Home Manager runs as a NixOS module, so `nixos-rebuild switch` activates the
   # user environment in the same atomic switch as the system. The modules below
@@ -62,7 +94,7 @@
     useGlobalPkgs = true; # HM builds against the system nixpkgs, not its own
     useUserPackages = true; # user packages into /etc/profiles, not ~/.nix-profile
     extraSpecialArgs = { inherit unstable; };
-    users.nixos = {
+    users.${username} = {
       imports = [
         ../modules/shell
         ../modules/editor

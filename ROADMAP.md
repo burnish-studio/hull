@@ -106,6 +106,15 @@ decided, so Phase 3 has no naming questions left. `alx` as git `user.name` on
 both accounts; per-account GitHub noreply addresses as `user.email`. Full values
 and reasoning in HANDOVER.
 
+**Part of this module's bill is already paid (2026-07-28).** The account rename
+was pulled forward deliberately, so Phase 3 does not have to perform a fiddly
+OS-level rename and the registry wiring in one switch. `hosts/wsl.nix` binds
+`username = "alx"` once in a `let` and uses it at all three sites, so wiring the
+registry in is a **one-line swap** to `registry.hosts.wsl.username`. That line is
+a knowing ADR 0002.A breach and Phase 3 is what removes it - do not leave it.
+`networking.hostName = "wsl"` was decided at the same time and is host *type*,
+which 0002.C permits, so it stays.
+
 **Carried from the v1 registry review (2026-07-28) - three things must not port:**
 1. `hull.url = "path:/home/adam/burnish-studio/hull-fedora"` - this *is* "Gap C",
    preserved in the file: an absolute path, the old username, and pointing at the

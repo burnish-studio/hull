@@ -1,6 +1,6 @@
 # Handover - for an agent picking this up cold
 
-Accurate as of **2026-07-28**, end of the herdr-keys + `agents`-module session.
+Accurate as of **2026-07-28**, end of the account-rename preparation session.
 
 ## One-line state
 
@@ -17,6 +17,11 @@ tree: nvim, herdr, Claude settings, Claude status line, and `AGENTS.md` to both
 `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`. VS Code Remote-WSL connects,
 via `nix-ld`.
 
+**The account rename is prepared but not switched.** hull declares `alx` and
+`networking.hostName = "wsl"`; it is build-gated and committed, and the machine
+still runs as `nixos@nixos` until the captain runs the procedure. That is task 1
+below.
+
 **Measured 2026-07-28 at close:** guest 8.0 GB used, store 6.9 GB,
 `~/.vscode-server-insiders` 678 MB. The store grew ~600 MB this session, almost
 all of it `python3` and `pi`. Versions: git 2.54.0, gh 2.96.0, claude-code
@@ -24,26 +29,57 @@ all of it `python3` and `pi`. Versions: git 2.54.0, gh 2.96.0, claude-code
 
 ### ⚠️ Start here
 
-**1. Enable the two GitHub email-privacy settings** on both accounts - see the
-identity section. Not done yet, and the captain runs this. Cheap and it is the
-only thing structurally preventing a private address reaching a public commit.
+**0. Run `whoami` before anything else.** The account rename was handed to the
+captain at the end of the 2026-07-28 session, so you are arriving in one of two
+states and they need different work:
 
-**2. Rename the Linux account `nixos` to `alx`** - cheapest while the home
-directory is still nearly empty, and safe now hull is pushed. Procedure below.
-Its own small session; it is the fiddliest step so far. **Afterwards, re-run
-`herdr integration install claude`** - the hook registration it wrote into
-Claude's settings hardcodes `/home/nixos/` and will break on the rename.
+| `whoami` | State | What you do |
+| --- | --- | --- |
+| `alx` | The rename **succeeded** | Task 1a below - the follow-ups |
+| `nixos` | Not run, or it failed | Task 1b below |
+
+**1a. If you are `alx`, finish the rename off.** The switch is only the middle of
+the job:
+- Verify: `id` shows `uid=1000(alx)`, `hostname` is `wsl`, and all six
+  out-of-store symlinks resolve under `/home/alx/hull` (list in the state block).
+- `herdr integration install claude` - its registered hook path still hardcodes
+  `/home/nixos/`. Do not hand-edit it; herdr overwrites the file on reinstall.
+  It lands as a git diff in hull, so commit it.
+- `rm -rf ~/.vscode-server-insiders` - 11 files inside reference `/home/nixos`.
+  VS Code re-injects it on next connect.
+- Confirm generation 14 exists and 12, 13, 14 are held.
+- Then trim the "Renaming the Linux account" section down to a few lines. It is
+  long because it is a rehearsal script; once run, it is history.
+
+**1b. If you are still `nixos`, the rename has not happened.** hull's side is
+done, build-gated and pushed - only the machine side is outstanding, and it is
+the captain's to run, not yours. **The full procedure is in "Renaming the Linux
+account" below; follow it there and read the three caveats, because every one of
+them was wrong in this document until it was tested.** If it was attempted and
+failed, find out how far it got before re-running anything: `whoami`, `ls -d
+/home/*`, and `nix-env -p /nix/var/nix/profiles/system --list-generations`.
+
+**2. Then compress this file.** It reached ~1400 lines on 2026-07-28 and is still
+growing. The short rules were extracted to `AGENTS.md` at the repo root so a
+newcomer is safe after 73 lines, which was the structural fix - but the state
+document itself keeps growing, and some of it reads as archaeology already. The
+session logs are the obvious candidate: they are append-only and the oldest carry
+little that is not superseded. Correcting and shortening matters more here than
+appending. Do it deliberately; there is load-bearing detail mixed into the
+history.
 
 **3. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
-the registry has no GitHub remote. Read the collision warning below first.
+the registry has no GitHub remote. Read the collision warning below first. Note
+the rename has already paid part of Phase 3's bill: `hosts/wsl.nix` now binds the
+username once, so wiring the registry in is a one-line swap rather than a hunt.
 
-**Also queued, and genuinely worth a session of its own: compress this file.**
-It reached 1311 lines on 2026-07-28, up 22% in one session. The short rules were
-extracted to `AGENTS.md` at the repo root so a newcomer is safe after 73 lines,
-which was the structural fix - but the state document itself still grew, and some
-of it will read as archaeology within a fortnight. Correcting and shortening
-matters more here than appending. Do it deliberately rather than in a hurry;
-there is load-bearing detail mixed in with the history.
+**Closed 2026-07-28:** the GitHub email-privacy item. The captain confirmed both
+noreply addresses are the ones already in use, taken from the accounts' own
+settings pages. Worth one glance next time you are in there: *Block command-line
+pushes that expose my email* is a **separate** tick from *Keep my email addresses
+private*, and it is the one that actually rejects a bad push. `gh api user`
+returns `email: null`, consistent with privacy being on; the block setting is not
+exposed through the API, so it cannot be verified from here.
 
 **Before touching anything: `git pull`.** The Fedora machine can still push to
 this repo and has done so mid-session before. See "Two machines" below.
@@ -571,8 +607,11 @@ don't police it by remembering; make the system report it.
 
 ## Renaming the Linux account `nixos` → `alx`
 
-Not done yet. Recorded here because the mechanism is non-obvious and the ordering
-matters.
+**The hull side is done and build-gated (2026-07-28); the machine side is the
+captain's to run.** Procedure below. An earlier version of this section carried
+three errors that were found by testing rather than reading - they are corrected
+in place and called out at the bottom, because each one would have cost a
+recovery.
 
 **Why bother:** NixOS-WSL's installer creates `nixos` before hull exists, so the
 bootstrap order guarantees a placeholder. A system that reproduces "to the
@@ -580,30 +619,103 @@ captain's liking" should not greet him as `nixos@nixos`. The registry already ha
 a `hosts.<name>.username` field designed to carry this.
 
 **The mechanism is kinder than expected.** Linux records a numeric **uid** on
-every file, not a name; the name is a lookup. The account is uid 1000, so if
-`alx` is also uid 1000, every existing file transfers ownership automatically -
-nothing needs `chown`. The scary part reduces to a `mv`.
+every file, not a name; the name is a lookup. The account is uid 1000 and
+NixOS-WSL declares `uid = mkDefault 1000` for whoever `wsl.defaultUser` names, so
+`alx` inherits it and every existing file transfers ownership automatically.
+Nothing needs `chown`, and the scary part reduces to a `mv`.
 
-```nix
-users.users.alx.uid = 1000;   # same uid → existing files just work
-wsl.defaultUser = "alx";      # regenerates /etc/wsl.conf
-```
-then rebuild, `mv /home/nixos /home/alx` from a root shell, and
-`wsl --terminate NixOS` so the new `/etc/wsl.conf` takes effect.
+### What hull already changed
 
-**Three caveats:**
-- You cannot rename an account you are logged into - do the move from
-  `wsl -d NixOS -u root`.
-- `users.mutableUsers` is `true`, so the old `nixos` account **lingers** until
-  explicitly removed; it does not vanish on rebuild.
-- `/etc/wsl.conf` also carries `hostname=nixos`, which hull does not currently
-  set. Decide it deliberately rather than inheriting it.
+`hosts/wsl.nix` binds `username = "alx"` once in a `let` and uses it at all three
+sites (`wsl.defaultUser`, the login shell, the Home Manager user), so Phase 3
+swaps one line for `registry.hosts.wsl.username`. `networking.hostName = "wsl"`
+is now declared rather than inherited - see the comment in the file for why not
+`hull` or `nixos`. Verified by evaluation: uid 1000, home `/home/alx`, groups
+`wheel`, and the generated `/etc/wsl.conf` carries `hostname=wsl` /
+`default=alx`. `hull.repoPath` derives from `home.homeDirectory`, so all six
+out-of-store symlinks re-point at `/home/alx/hull` with no path edits - the Gap C
+fix paying off.
 
-**Do it after Phase 2 is pushed.** Once hull is on GitHub, the worst outcome of a
-botched rename is re-cloning and re-authenticating `gh` - a few minutes. That is
-the reproducibility claim being cashed in rather than asserted, and it is worth
-testing deliberately while the home directory is still nearly empty. Treat it as
-its own small session; it is the fiddliest step in the project so far.
+### The procedure
+
+**Prerequisite: the change must be committed and pushed first.** The recovery
+story for a botched rename is re-cloning from GitHub, which only exists if the
+commit is up there.
+
+1. **Close everything** - VS Code Remote-WSL especially, since its server runs as
+   `nixos` and holds `/home/nixos` open. Exit every shell in the distro.
+2. **From Windows, open a root shell:** `wsl -d NixOS -u root` (confirm the
+   distro name on the Windows side; hull must not read it).
+3. **Move the home directory first** - this ordering is load-bearing:
+   ```bash
+   mv /home/nixos /home/alx
+   ```
+4. **Activate the pre-built closure** - the exact one the build gate produced
+   from the commit that declared `alx`:
+   ```bash
+   nix-env -p /nix/var/nix/profiles/system \
+     --set /nix/store/yrxd0p72dx5apj40jfwyx4p0xis3dj7w-nixos-system-wsl-26.05.20260722.b3fe958
+   /nix/var/nix/profiles/system/bin/switch-to-configuration switch
+   ```
+   This is what `nixos-rebuild switch` does internally, split in two. It is used
+   here because **`nixos-rebuild switch --flake` cannot work from a root login** -
+   see the caveats. The first command is what creates generation 14; running
+   `switch-to-configuration` alone would activate without recording a
+   generation, which breaks rollback and the generation cap.
+
+   If that store path has been garbage-collected by the time you run this,
+   rebuild it as `alx` after the fact rather than fighting it: `nixos-rebuild
+   build --flake ~/hull#wsl` then `readlink -f ./result`. The path is
+   reproducible - it was byte-identical across a dirty and a clean tree.
+
+   Home Manager will not be a problem here, which was checked rather than
+   assumed: `home-manager-alx.service` is a **system** unit (`User=alx`,
+   `After=nix-daemon.socket`), so it does not depend on `user@1000.service` and
+   this machine's known failure there cannot affect the switch.
+5. **From Windows:** `wsl --terminate NixOS`, so the new `/etc/wsl.conf` takes
+   effect and you are logged back in as `alx`.
+6. **Verify:** `whoami` → `alx`, `id` → `uid=1000(alx) … 100(users),1(wheel)`,
+   hostname → `wsl`, and all six out-of-store symlinks resolve under
+   `/home/alx/hull`.
+7. **Re-run `herdr integration install claude`.** The hook registration in
+   `settings.json` hardcodes `/home/nixos/…` and is now stale. Do not hand-edit
+   it - herdr overwrites the file on reinstall. It lands as a git diff in hull,
+   so commit it. `pi` needs no equivalent: its extension is discovered by
+   directory, with no absolute path recorded.
+8. **Delete `~/.vscode-server-insiders`** and let VS Code re-inject it. Eleven
+   files inside it reference `/home/nixos` (logs, caches, two copilot helpers).
+   It is imperative, non-reproducible state that hull already disclaims, so
+   rebuilding it is cheaper than auditing it. Reclaims 678 MB in the meantime.
+
+### Caveats - all three verified, not assumed
+
+- **`nixos-rebuild switch --flake` fails from a root login.** Nix reads the flake
+  through **libgit2**, which refuses a repository owned by another uid
+  (`error code = 7`). Under `sudo` it works, because libgit2 honours `SUDO_UID` -
+  which is why the normal workflow has never hit this. `GIT_CONFIG_COUNT` env
+  overrides do **not** help: that is a git-CLI feature libgit2 does not implement.
+  Two things do work if the pre-built closure is ever inconvenient: a real
+  `[safe] directory` entry in `/root/.gitconfig`, or `SUDO_UID=1000` in the
+  environment. Both were tested; activating the pre-built closure is preferred
+  because it needs no workaround at all and reuses the bytes the gate verified.
+- **Move before you switch, never after.** `createHome` is `true`, so switching
+  first creates an *empty* `/home/alx`, and `mv /home/nixos /home/alx` would then
+  nest it as `/home/alx/nixos` rather than renaming. Recoverable, but confusing
+  at exactly the wrong moment.
+- **The old account does not need deleting.** `switch-to-configuration
+  dry-activate` reports `would remove user 'nixos'`: `update-users-groups.pl`
+  removes a *previously declared* user even when `mutableUsers = true`, and
+  rewrites `/etc/passwd` in one pass - so removal and creation are simultaneous
+  and there is never a window with two accounts on uid 1000. Removal is
+  **omission from `/etc/passwd` only**; the script never deletes a home
+  directory, so no ordering mistake can lose data.
+
+**Corrections to what this section previously said**, all three found by testing:
+it claimed the old account *lingers* under `mutableUsers` and needs explicit
+removal (it does not); it prescribed `users.users.alx.uid = 1000` (redundant -
+NixOS-WSL already sets it as an `mkDefault`); and it gave the order as rebuild
+*then* `mv`, which is backwards and would have nested the home directory. It also
+left the hostname undecided; it is now declared.
 
 ## Disk and generations (policy decided 2026-07-27)
 
@@ -1210,17 +1322,94 @@ store 6.3 GB, `~/.vscode-server-insiders` 678 MB - all within noise of the
 previous reading the same day. Versions: git 2.54.0, gh 2.96.0, claude-code
 2.1.220, neovim 0.12.4, herdr 0.7.5.
 
+## Session log - 2026-07-28 (preparing the account rename)
+
+A short session with one job: get the `nixos` → `alx` rename ready to run. The
+hull-side change is small; almost all the value was in testing the recorded
+procedure, **three steps of which were wrong**.
+
+**What was wrong is corrected in the rename section above, not restated here** -
+one source. In summary: the old account does not linger and needs no `userdel`;
+the `mv` must precede the switch or `createHome` nests the home directory; the
+prescribed `uid = 1000` was a redundant restatement of a NixOS-WSL default. A
+fourth problem was not in the document at all - **`nixos-rebuild switch --flake`
+cannot run from a root login**, because nix reads flakes through libgit2, which
+rejects a repository owned by another uid.
+
+The generalisable lesson, and the reason all four were missed: **every one of
+them was invisible to reading and obvious to testing.** `dry-activate` reported
+the user removal, a five-second `sudo env -u SUDO_UID` reproduced the libgit2
+refusal, and `createHome` was one `nix eval`. A procedure written from
+documentation and never rehearsed is a draft, and this one had been sitting in
+the file described as recorded fact since 2026-07-27.
+
+**The hostname was decided rather than inherited**, as the document asked. `wsl`,
+declared in `hosts/wsl.nix`. Ruled out: `hull` and `nixos` both fail a
+hostname's only job, since the Phase 6 machine will also be running hull, on
+NixOS. Host type is the axis that separates them, and it already names the flake
+attribute and the registry's `hosts.wsl` key, so the machine's name now matches
+its configuration's name. ADR 0002.A lists hostname as identity, but 0002.C makes
+hull explicitly host-type-aware - `wsl` is host type; `alx-laptop` would be the
+breach that clause guards against.
+
+**One deliberate ADR breach, flagged rather than slipped in.** ADR 0002.A says
+zero identity in hull - "no name / account / key / hostname". `username = "alx"`
+in `hosts/wsl.nix` violates that. It was taken knowingly, for a reason worth
+recording: the alternative was to leave the rename to Phase 3, which would then
+perform a fiddly OS-level rename *and* the registry wiring in a single switch -
+two risky things at once. Renaming now keeps them separate, and lets Phase 3 be a
+pure refactor that changes the *source* of the name rather than the name itself.
+The binding sits once in a `let` and is used at all three sites, so Phase 3
+removes the breach by swapping one line.
+
+**The "do it while the home directory is nearly empty" argument turns out to be
+weak**, and the file had leaned on it. The mechanism is a `mv`, which is O(1)
+whatever the directory holds. What actually grows with time is the number of
+files with `/home/nixos` baked in - and that was measured rather than guessed:
+only Claude's own `history.jsonl` (transient), the herdr hook path registered in
+`settings.json` (regenerated by reinstalling the integration), and 11 files in
+`~/.vscode-server-insiders` (logs and caches; delete the directory). `~/.gitconfig`
+and `gh/hosts.yml` hold **no** home paths and survive untouched. So the real
+argument for doing it now is the Phase 3 sequencing above, not the calendar.
+
+**Verified by evaluation, not assumed:** `alx` gets uid 1000, home `/home/alx`,
+`isNormalUser`, groups `wheel`; the generated `/etc/wsl.conf` carries
+`hostname=wsl` and `default=alx`; `users.users.nixos` is no longer a declared
+attribute; and `hull.repoPath` derives to `/home/alx/hull`, so all six
+out-of-store symlinks re-point with no path edits - `modules/paths.nix` earning
+its keep. The build gate is green and produced
+`nixos-system-wsl-26.05.20260722.b3fe958`, with `home-manager-alx.service` in the
+closure.
+
+**Re-measured 2026-07-28 at close:** guest 8.2 GB used, store 7.0 GB - up 0.2 GB
+from the start of the session, which is the new system closure and nothing else.
+Nothing was switched, so still generation 13.
+
+**This file grew again, by ~200 lines, and that is the second session running.**
+Most of it is the rehearsed procedure, which is worth its space until the rename
+is done and can then be cut to a few lines. The session log above was deliberately
+kept short and points at that section rather than repeating it. Compression is
+task 2 in "Start here" - after the rename, not before, because the procedure is
+what the next session needs most.
+
 ## What is NOT done
 
 - ~~The interactive environment has not been lived in.~~ **Done 2026-07-28.**
   nvim launched for the first time, lazy.nvim installed all 9 pinned plugins,
   `lazy-lock.json` unchanged afterwards, rose-pine rendering correctly. herdr
   keybindings still want a hands-on pass, but the module is proven.
-- **The Linux account is still `nixos`** - rename to `alx` is planned, procedure
-  recorded above.
-- **The two GitHub email-privacy settings are not enabled yet** on either
-  account. Until *Block command-line pushes that expose my email* is on, nothing
-  structurally prevents a misconfigured repo from publishing a private address.
+- **The Linux account is still `nixos` on the machine.** hull now declares `alx`
+  and the change is build-gated and committed, but nothing has been switched -
+  the rename is a captain-run step. Procedure and caveats above.
+- ~~The two GitHub email-privacy settings are not enabled.~~ **Closed
+  2026-07-28** - the noreply addresses in use came from those settings pages, so
+  privacy is on. *Block command-line pushes that expose my email* is a separate
+  tick that cannot be checked through the API; worth confirming by eye once.
+- **hull holds one hardcoded username, knowingly** - `username = "alx"` in
+  `hosts/wsl.nix`, which breaches ADR 0002.A. Taken deliberately so the rename
+  could happen in isolation rather than inside Phase 3's first switch. It is
+  bound once in a `let`, so Phase 3 removes it by swapping a single line for
+  `registry.hosts.wsl.username`. Do not let it settle in.
 - **Git identity is repo-local to `~/hull` only** - every other repo on this
   machine, including `hull-fedora`, still cannot commit.
 - **Module options are undesigned**, deliberately - Phase 6, when `native` shows
@@ -1270,7 +1459,12 @@ previous reading the same day. Versions: git 2.54.0, gh 2.96.0, claude-code
   keys. pi cannot reach deepseek or kimi until keys are added there.
 - **The claude integration's registered hook path hardcodes `/home/nixos/`** and
   will break on the account rename. Re-run `herdr integration install claude`
-  afterwards; do not hand-edit, herdr overwrites it.
+  afterwards; do not hand-edit, herdr overwrites it. `pi` needs no equivalent -
+  verified 2026-07-28 that its extension is discovered by directory, with no
+  absolute path written anywhere.
+- **`~/.vscode-server-insiders` holds 11 files referencing `/home/nixos`** - logs,
+  caches and two copilot helpers. Delete the directory after the rename and let
+  VS Code re-inject it; it is imperative state hull already disclaims.
 - **~5 GB is trapped in the WSL virtual disk** - one manual Windows-side
   compaction recovers it.
 - **Fedora is still installed and holds 78.47 GB.** Retirement deferred by the
