@@ -1,18 +1,17 @@
 # Handover - for an agent picking this up cold
 
-Accurate as of **2026-07-28**, end of the house-style sweep session.
+Accurate as of **2026-07-28**, end of the herdr-keys + `agents`-module session.
 
 ## One-line state
 
-Phase 1 and Phase 2 are **complete and live**. `modules/shell`, `modules/editor`
-and `modules/tools` are activated on the running system (generation 10): zsh is
-the login shell, all user packages resolve, and both out-of-store symlinks
-resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
+Phase 1 and Phase 2 are **complete, live and fully verified** - the interactive
+environment has now been sat in by a human, which was the last outstanding claim.
+A first slice of **Phase 5** is also live: `modules/agents` exists, holding
+`claude-code` and the Claude Code status line.
 
-Phase 2 was **committed and pushed 2026-07-28** - the first commits ever authored
-from the NixOS machine, using the identity decided that day. Everything through
-**`2eecde4`** is on `origin/main`; the working tree is clean, and the local branch
-is level with the remote.
+Running **generation 11**. zsh is the login shell, all user packages resolve, and
+all four out-of-store symlinks (nvim, herdr, claude settings, claude statusline)
+resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
 
 ### ⚠️ Start here
 
@@ -30,7 +29,22 @@ the registry has no GitHub remote.
 this repo and has done so mid-session before. See "Two machines" below.
 
 If something is wrong, `sudo nixos-rebuild switch --rollback` returns you to
-generation 9, the known-good pre-Phase-2 system.
+generation 10, the known-good pre-`agents` system.
+
+### ⚠️ A collision is waiting in Phase 3
+
+Home Manager **aborts activation** rather than overwrite a file it has no record
+of creating. Hit for real this session: `~/.claude/settings.json` already existed
+(Claude Code wrote it on first run), so the switch would have failed until the
+file was removed. It was checked first - both its settings were carried into
+hull's version - and then deleted.
+
+**Phase 3 will hit this harder.** It manages `~/.gitconfig`, and that file
+already exists with content you need: `gh auth login` wrote a credential helper
+into it. Plan the migration rather than discovering it mid-switch. The general
+alternative is `home-manager.backupFileExtension`, which renames the offender
+instead of aborting; it was deliberately not adopted for a single one-off
+collision, but it may earn its place when several land at once.
 
 ### ⚠️ Before closing shop
 
@@ -266,7 +280,17 @@ if pushing-from-one-machine-and-rebuilding-on-another becomes routine.
 - **`hosts/wsl.nix`** holds host config only: WSL settings, flakes, system
   packages, the unfree predicate, disk hygiene, the zsh login shell, and the
   home-manager block that imports the modules. No workarounds.
-- **`modules/` is no longer empty** - `paths.nix`, `shell/`, `editor/`, `tools/`.
+- **`modules/` is no longer empty** - `paths.nix`, `shell/`, `editor/`, `tools/`,
+  `agents/`.
+- **`claude-code` is a USER package now**, in `modules/agents`, not a system
+  package in `hosts/wsl.nix`. The host file's reason for system packages - `sudo
+  nixos-rebuild` runs as root and needs `git` to read a flake from a git repo -
+  never applied to it. `git` and `gh` stay system packages for that reason.
+- **The terminal font is JetBrainsMono Nerd Font** (decided 2026-07-28), installed
+  Windows-side by hand. It renders the status line's Plane-15 glyphs correctly,
+  verified live. Phase 6 should use `nerd-fonts.jetbrains-mono` for `native` so
+  both host types agree - note the ported `wezterm.lua` still says `Hack Nerd
+  Font`, which is Kun's choice describing the laptop, and should change with it.
 - **`flake.lock` is committed.** Three inputs track the **26.05 release line**:
   nixpkgs on `nixos-26.05` (the Hydra-tested channel branch - binaries are in the
   cache; `release-26.05` is the raw one and would mean source builds), nixos-wsl
@@ -919,21 +943,113 @@ at all, so nvim has never been launched here. See "What is NOT done".
 updates HANDOVER before it ends. The captain's instruction, and the natural
 consequence of this project having no agent memory files.
 
+## Session log - 2026-07-28 (herdr keys, the `agents` module)
+
+The captain's first real session *using* the environment rather than building it.
+He is new to neovim and to multiplexers, so much of this was guided use, and the
+findings came out of that use rather than out of review.
+
+**Phase 2 is now fully verified.** `nvim` was launched for the first time on this
+machine; lazy.nvim bootstrapped and installed all 9 pinned plugins, and
+`lazy-lock.json` came back **unchanged** afterwards, which is the lock doing its
+job. rose-pine renders correctly in truecolor - visible in the plugin manager's
+purple/teal/amber. That closes the last outstanding Phase 2 claim.
+
+**A `COLORTERM` worry was raised and then disproved.** `COLORTERM` is empty in
+this shell, which usually signals no truecolor. Neovim queries the terminal
+directly instead of trusting it, so rose-pine was fine. Do not re-investigate.
+
+**herdr keybindings reverted to herdr's own defaults.** The inherited config set
+12 keys; **eight of them merely restated herdr's defaults verbatim**, and three
+were deliberate tmux overrides carried from Kun (`%` / `"` for splits, `&` for
+close-tab). The captain has no tmux muscle memory, so the overrides bought him
+nothing while costing a Shift press each. Only `copy_mode` was a real decision and
+it stayed. Three keys change in use: splits are `prefix+v` / `prefix+minus`, and
+close-tab is `prefix+shift+x`.
+
+The reusable point: **restating a default is not documentation, it is a silent
+pin.** If herdr changed a default, hull would hold the old value with nobody
+having decided to. The file now holds decisions only, and points at `prefix+?`
+and `herdr --default-config` for the rest.
+
+**`prefix = ctrl+b` was kept, and it is not arbitrary** - it is herdr's default
+*and* tmux's. The usual "improvement" to `ctrl+a` collides with beginning-of-line
+in zsh, which is used constantly. `h/j/k/l` was likewise already the default.
+
+**Built `modules/agents`** - the first slice of Phase 5. It holds `claude-code`
+(moved out of `hosts/wsl.nix`, and from a system to a user package) plus the
+Claude Code `settings.json` and status line, both linked out-of-store so they are
+edited live. Switched, verified, running on generation 11.
+
+**Three real defects found in the ported v1 status line**, none of which would
+have shown up by reading it:
+
+1. **It could never have run on NixOS.** It parsed the session JSON with python3,
+   commented as "stable at /usr/bin/python3", because "jq is not guaranteed on
+   this machine". On NixOS both halves are false in the *opposite* direction:
+   there is no `/usr/bin/python3` and no `python3` on PATH at all, while `jq` is
+   declared in `modules/tools`. Rewritten in jq. The lesson is that a portability
+   assumption written down on one host becomes a landmine on the next.
+2. **The gh identity lookup could never succeed.** It ran `timeout 1 gh api user`.
+   Measured here across four runs: 1.05-1.09s, consistently. So the timeout killed
+   it every single time and the segment vanished silently once the 30s cache
+   expired - which is exactly why it looked fine in early testing. Replaced by
+   reading `user:` from gh's own `hosts.yml`, which is the same fact held locally
+   and is what `gh auth switch` rewrites. **No network, no timeout, no cache, no
+   stale window** - and the whole status line went from >1s to 0.052s.
+3. **It hardcoded identity.** A case statement mapped `burnish-studio` -> `burnish`
+   and `flintec-studio` -> `flintec`. That is identity data in an
+   identity-agnostic public repo (ADR 0002). Caught by the captain, not the agent.
+   It now prints whatever account gh reports, so the file is correct on any
+   machine for any account. Short display labels, if ever wanted, belong in the
+   registry - it is private and already holds the aliases (D1.5).
+
+**Dropped from the v1 `settings.json` on port:** a `WebFetch` allowance for a
+client's domain and an enabled `vercel` plugin. Both are project-scoped, and the
+client domain would have published a client relationship in a public repo. The
+likely origin is an "always allow" answer during a session on that project being
+written to the *user-level* settings file. Only the opinions came across: model,
+effort level, tui, theme, and the status line command.
+
+**The out-of-store pattern proved itself in anger.** The timeout bug was fixed by
+editing the script and re-running it - live, no rebuild - because
+`~/.claude/statusline.sh` points into the repo. That is the exact benefit the
+architecture claims for the exception, demonstrated rather than asserted.
+
+**Two corrections the captain made, both worth keeping:**
+- Do not attribute a beginner's difficulty to a config decision. The claim that
+  the `Esc`-saves binding had "caused two problems in twenty minutes" was wrong;
+  neither incident was caused by it. He was learning a new tool.
+- The `JetBrainsMono Nerd Font Mono` reference in the v1 status line was called a
+  stray that "matches nothing else in the project". It was not - it described the
+  **Windows Terminal** font, while `wezterm.lua` says `Hack Nerd Font` because
+  that file came from Kun and describes the laptop. Two terminals, two fonts, and
+  the comment was accurate about its own context.
+
+**A keybinding rethink is wanted, deferred deliberately.** `Ctrl-r` for redo is
+awkward; the usual fix is binding `U` (whose default "undo line" is near-useless).
+The `Esc`-to-save binding is a fair candidate to revisit at the same time. Both
+live in `modules/editor/nvim/lua/keys.lua`, which is out-of-store, so it is an
+edit with no rebuild.
+
+**Verified live, not by evaluation:** generation 11 with 9, 10, 11 held; the
+activation cap dropped 8 during the switch; all four out-of-store links resolve
+into the working tree; `claude` present in the user profile and absent from
+`/run/current-system/sw/bin`; the status line renders in 0.052s with the identity
+segment correct; `herdr config check` clean. The built closure
+(`avcvrgwz7m6…`) was byte-identical to the one the pre-switch gate produced.
+
+**Re-measured 2026-07-28 (guest side, end of this session):** guest 7.4 GB used,
+store 6.3 GB, `~/.vscode-server-insiders` 678 MB - all within noise of the
+previous reading the same day. Versions: git 2.54.0, gh 2.96.0, claude-code
+2.1.220, neovim 0.12.4, herdr 0.7.5.
+
 ## What is NOT done
 
-- **The interactive environment has still not been fully lived in.** The switch
-  is done and everything resolves, but the prompt, autosuggestions, `nvim`
-  actually launching and fetching its pinned plugins, and `herdr` running are all
-  still unconfirmed by a human sitting in the shell. Correctness here is
-  experiential and no amount of evaluation substitutes for it.
-  **Hard evidence, checked 2026-07-28: `~/.local/share/nvim` does not exist at
-  all.** Not an empty plugin directory - the directory nvim creates on its very
-  first run is absent, so `nvim` has never been started on this machine and
-  lazy.nvim has never bootstrapped. The first launch is therefore still an
-  untested step that needs network, and it is the single cheapest outstanding
-  check: run `nvim`, watch lazy.nvim install the 9 pinned plugins, confirm
-  `lazy-lock.json` is unchanged afterwards (it should be - the lock is what
-  pins them).
+- ~~The interactive environment has not been lived in.~~ **Done 2026-07-28.**
+  nvim launched for the first time, lazy.nvim installed all 9 pinned plugins,
+  `lazy-lock.json` unchanged afterwards, rose-pine rendering correctly. herdr
+  keybindings still want a hands-on pass, but the module is proven.
 - **The Linux account is still `nixos`** - rename to `alx` is planned, procedure
   recorded above.
 - **The two GitHub email-privacy settings are not enabled yet** on either
@@ -953,7 +1069,14 @@ consequence of this project having no agent memory files.
   too, not a regression". That was wrong in an important way: **Kun ships a
   `lazy-lock.json` and hull had dropped it.** The plugin specs were verified
   byte-identical to his, so the lock was the only missing piece. Do not remove it.
-- **`git-identity` (Phase 3) and `agents` (Phase 5) modules do not exist.**
+- **`git-identity` (Phase 3) does not exist.**
+- **`agents` (Phase 5) exists but is only half built.** It holds `claude-code`
+  and the Claude Code status line. Still owed: `AGENTS.md` and Kun's
+  one-source-three-targets pattern (one file linked to `.claude/CLAUDE.md`,
+  `.codex/AGENTS.md`, `.config/opencode/AGENTS.md`), plus moving the house style
+  out of this file and into it. That is a *content* decision - what hull's agent
+  instructions actually say - not a wiring one, which is why it was not done
+  alongside the status line.
 - **Registry ↔ flake wiring** is unsolved (registry has no GitHub remote yet;
   must avoid v1's hardcoded-path "Gap C"). Note `modules/paths.nix` now solves
   the *same class* of problem for out-of-store links - reuse the pattern.
@@ -962,8 +1085,13 @@ consequence of this project having no agent memory files.
   user comes from the registry (Phase 3), though the rename can happen sooner.
 - **`hosts/native.nix`** does not exist - Phase 6.
 - A NixOS minimal ISO is on a USB stick ready for the laptop (Phase 6 prep).
-- **`claude-code` sits in `hosts/wsl.nix` temporarily** - it belongs in the
-  `agents` module (Phase 5).
+- **nvim keybindings want a deliberate pass.** `Ctrl-r` for redo is awkward -
+  bind `U` instead. The `Esc`-saves binding should be reconsidered at the same
+  time. `modules/editor/nvim/lua/keys.lua`, out-of-store, so no rebuild.
+- **The status line icons depend on a Windows-side font.** JetBrainsMono Nerd
+  Font is installed and working, but it is manual and undeclared - it belongs on
+  the Windows checklist alongside WezTerm. `CLAUDE_STATUSLINE_ICONS=0` falls back
+  to text labels if a machine lacks it.
 - **~5 GB is trapped in the WSL virtual disk** - one manual Windows-side
   compaction recovers it.
 - **Fedora is still installed and holds 78.47 GB.** Retirement deferred by the

@@ -4,9 +4,11 @@ hull is a NixOS flake that produces a reproducible developer environment for two
 host types. This file is the **shape**; the *why* of each choice is in
 `docs/adr/`, and the vocabulary is in `CONTEXT.md`.
 
-> Status: **partly built.** `hosts/wsl.nix` and the `shell` / `editor` / `tools`
-> modules are real and **activated on the WSL host**; `git-identity`, `agents`,
-> `lib/`, `cli/` and `hosts/native.nix` do not exist yet. See `ROADMAP.md`.
+> Status: **partly built.** `hosts/wsl.nix` and the `shell` / `editor` / `tools` /
+> `agents` modules are real and **activated on the WSL host**; `git-identity`,
+> `lib/`, `cli/` and `hosts/native.nix` do not exist yet. `agents` is half built -
+> the Claude Code package and status line are live, `AGENTS.md` is not. See
+> `ROADMAP.md`.
 
 ## Top-level layout (`*` = exists today)
 
@@ -26,7 +28,8 @@ modules/           sealed concerns, each with a small typed interface
   tools/         * ripgrep, fd, jq, lazygit, node, herdr + herdr's config
   git-identity/    Generator (accounts → gitconfig/ssh) + its Home Manager adapter;
                    consumes the registry
-  agents/          claude config, AGENTS.md, statusline
+  agents/        * claude-code + its settings and status line, linked out-of-store.
+                   AGENTS.md and the one-source-three-targets links are still owed.
 lib/               pure helpers - e.g. the git-identity Generator as a pure function,
                    shared by its module adapter and by the CLI
 cli/               the `hull` command, a writeShellApplication (see ADR 0004)

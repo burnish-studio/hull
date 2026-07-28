@@ -70,10 +70,18 @@ what actually needs to vary. The genuine deep-module work is Phase 3's
 - [x] `programs.nix-ld.enable` added so VS Code Remote-WSL can run its injected
       generic-linux `node`. Host-layer, not a module - `native` should decide
       deliberately in Phase 6 rather than inherit it. See HANDOVER.
-- [ ] Confirm experientially: prompt, autosuggestions, nvim launching and
-      lazy.nvim fetching plugins, herdr running, aliases.
-- **Milestone:** the full interactive environment on WSL. ✅ *(Activated and
-  verified; the interactive feel is still being lived in.)*
+- [x] **Confirmed experientially 2026-07-28.** nvim launched for the first time;
+      lazy.nvim bootstrapped and installed all 9 pinned plugins with
+      `lazy-lock.json` unchanged afterwards; rose-pine renders correctly in
+      truecolor; the prompt, autosuggestions and aliases are live. A `COLORTERM`
+      truecolor worry was raised and disproved - neovim queries the terminal
+      directly rather than trusting that variable.
+- [x] **herdr keybindings reverted to herdr's own defaults** (2026-07-28). Eight
+      of the twelve inherited settings merely restated defaults; three were tmux
+      overrides carried from Kun, which buy nothing without tmux muscle memory.
+      Only `copy_mode` was a real decision. See the module comment and HANDOVER.
+- **Milestone:** the full interactive environment on WSL. ✅ *(Activated, and now
+  verified by use.)*
 
 ## Phase 3 - The `git-identity` module
 
@@ -163,25 +171,43 @@ routing actually works.
 
 ## Phase 5 - The `agents` module
 
-- [ ] Port claude config, `AGENTS.md`, statusline from `hull-fedora`, quality-checked.
+**Started early, 2026-07-28**, because the captain wanted his status line and
+that is real demand rather than speculative work. The wiring half is done and
+live; the content half is not.
+
+- [x] `modules/agents` created; `settings.json` and the status line ported from
+      `hull-fedora` and linked out-of-store so they are edited live.
+- [x] `claude-code` moved out of `hosts/wsl.nix` into this module, and from a
+      **system** package to a **user** package - the root-needs-it reason that
+      keeps `git` and `gh` system-wide never applied to it.
+- [x] Status line quality-checked rather than copied. Three defects fixed: a
+      python3 parse that could not run on NixOS at all, a 1s timeout on a 1.06s
+      call that could never succeed, and hardcoded account names that breached
+      ADR 0002 in a public repo. Full detail in HANDOVER.
+- [x] Client-scoped entries dropped on port - a `WebFetch` domain allowance and
+      an enabled plugin. Project-scoped settings belong in that project's own
+      `.claude/settings.json`, not in hull, and the domain named a client.
 - [ ] Adopt Kun's **one-source-three-targets** pattern (reviewed 2026-07-28): a
       single `AGENTS.md` in the repo, linked out-of-store to `.claude/CLAUDE.md`,
       `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. One source of truth,
       every agent tool reads it. See `~/dotfiles/home.nix`.
-- [ ] Move `claude-code` out of `hosts/wsl.nix` and into this module, where it
-      belongs - it sits there temporarily.
 - [ ] Extract the house style (adopted 2026-07-28, currently recorded in
       HANDOVER) into hull's own `AGENTS.md`, and link it to the three agent
-      tools. HANDOVER is the right home for it *now* - a separate file earns its
-      keep only once this module exists and something reads it.
+      tools. This is a *content* decision - what hull's agent instructions
+      actually say - which is why it did not ride along with the wiring.
 
 ## Phase 6 - The native host (bare metal NixOS)
 
 - [ ] Native NixOS install on the (non-precious) machine; `hosts/native.nix` with
       the GUI layer (Wayland, fonts, wezterm). Mine `~/dotfiles` for
       `home/.config/wezterm/wezterm.lua` and for font management via
-      `nerd-fonts.hack` + `fonts.fontconfig.enable` - both are manual
-      Windows-side items on WSL and become declarative here.
+      `fonts.fontconfig.enable` - both are manual Windows-side items on WSL and
+      become declarative here.
+      **Use `nerd-fonts.jetbrains-mono`, not Kun's `nerd-fonts.hack`** (decided
+      2026-07-28). JetBrainsMono Nerd Font is what is installed Windows-side and
+      renders the status line's Plane-15 glyphs correctly, verified live. The
+      ported `wezterm.lua` still says `Hack Nerd Font`, inherited from Kun and
+      describing his Mac; change it with the port so both host types agree.
 - [ ] Decide deliberately whether `native` wants `programs.nix-ld`. WSL needs it
       for VS Code's injected server; a native host may not need it at all.
 - [ ] **Do not copy the WSL disk-hygiene block** (ADR 0006). On a real disk,

@@ -6,7 +6,8 @@ agent config). This is the **NixOS-native** hull.
 
 > **Status: building (2026-07-28).** NixOS-WSL boots and rebuilds from this
 > flake (Phase 1 ✅), and the environment modules - `shell`, `editor`, `tools` -
-> are activated and live on the machine (Phase 2 ✅). `git-identity`, `agents`,
+> are activated, live, and verified by use (Phase 2 ✅). `agents` is half built:
+> Claude Code and its status line are live, `AGENTS.md` is not. `git-identity`,
 > the `hull` CLI and the `native` host are not written yet. New here? Start with
 > [`HANDOVER.md`](HANDOVER.md).
 

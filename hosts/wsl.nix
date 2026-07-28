@@ -15,19 +15,15 @@
   # gh: authentication for the private `hull-fedora` quarry and for pushing.
   # Already a declared runtime dep of `hull account add` (ADR 0004), so this is
   # pulling a known-needed tool forward, not a new dependency.
-  # claude-code: hull is developed on the machine it configures. Temporary home -
-  # this moves into the `agents` module in Phase 5.
-  # Taken from `unstable`, not the 26.05 pin: a Nix-installed binary cannot
-  # self-update, and Claude Code ships often enough that the release branch goes
-  # stale in weeks (26.05 had 2.1.187 while unstable had 2.1.220 - old enough to
-  # not list the current models). Unstable still lags upstream somewhat; that is
-  # accepted. It is one of two packages taken from unstable (herdr is the other,
-  # in modules/tools) - see flake.nix.
   #
   # These are SYSTEM packages, not user packages, on purpose: `sudo nixos-rebuild`
   # runs as root and needs `git` to read a flake from a git repo. A git installed
   # only into the user's Home Manager profile is invisible to root.
-  environment.systemPackages = [ pkgs.git pkgs.gh unstable.claude-code ];
+  #
+  # `claude-code` used to sit here too, marked temporary. It moved to
+  # modules/agents 2026-07-28 and became a user package in the process - the
+  # root-needs-it reason above never applied to it.
+  environment.systemPackages = [ pkgs.git pkgs.gh ];
 
   # --- Foreign binaries ---------------------------------------------------------
   # VS Code Remote-WSL injects a server into ~/.vscode-server*/ from the Windows
@@ -71,6 +67,7 @@
         ../modules/shell
         ../modules/editor
         ../modules/tools
+        ../modules/agents
       ];
       home.stateVersion = "26.05";
     };

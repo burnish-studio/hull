@@ -1,15 +1,39 @@
+# herdr - terminal / agent multiplexer.
+#
+# Policy: this file holds DECISIONS ONLY. herdr's defaults are good and are left
+# to herdr, because restating a default here silently pins today's value - if
+# herdr changed it, hull would hold the old one without anyone having decided to.
+#
+# See every binding with `prefix+?` inside herdr, or `herdr --default-config`.
+# Validate this file with `herdr config check` (it names unknown keys).
+#
+# Reverted to herdr's defaults 2026-07-28. The previous version carried three
+# tmux bindings inherited from Kun's dotfiles: `%` and `"` for the splits and `&`
+# for close-tab. They exist to preserve tmux muscle memory, which the captain
+# does not have, and all three need Shift for no gain; herdr's `v` / `-` /
+# `shift+x` are more mnemonic. Eight further lines restated herdr's defaults
+# verbatim and were removed as noise.
+#
+# The prefix stays `ctrl+b` - herdr's default, and also tmux's. The usual
+# "improvement" to `ctrl+a` collides with beginning-of-line in zsh, which is used
+# constantly. `h/j/k/l` for pane focus is also already the default, and matches
+# the vim motion being learned in neovim.
+#
+# Inherited defaults worth knowing, none of them set here:
+#   prefix+?         help                 prefix+q         detach
+#   prefix+v         split vertical       prefix+minus     split horizontal
+#   prefix+c         new tab              prefix+shift+x   close tab
+#   prefix+x         close pane           prefix+z         zoom pane
+#   prefix+h/j/k/l   focus pane           prefix+1..9      jump to tab
+#   prefix+n / +p    next / prev tab      prefix+b         toggle sidebar
+#   prefix+w         workspace picker     prefix+g         goto
+#   prefix+r         resize mode          prefix+e         edit scrollback
+#
+# Mouse is on by default (`ui.mouse_capture`): click to focus, right-click for
+# the pane menu, drag to select and copy, wheel to scroll.
+
 [keys]
-prefix = "ctrl+b"
-focus_pane_left  = "prefix+h"
-focus_pane_down  = "prefix+j"
-focus_pane_up    = "prefix+k"
-focus_pane_right = "prefix+l"
-split_horizontal = "prefix+double_quote"
-split_vertical   = "prefix+percent"
-new_tab   = "prefix+c"
-close_tab = "prefix+ampersand"
-workspace_picker = "prefix+w"
-goto             = "prefix+g"
-# herdr's copy-mode entry key; copy-mode's own internal keys
-# (v/space select, y/Enter copy, q/Esc cancel) aren't configurable.
+# Not listed in `herdr --default-config`, so it is set rather than assumed.
+# copy-mode's own internal keys (v/space select, y/Enter copy, q/Esc cancel)
+# are not configurable.
 copy_mode = "prefix+y"

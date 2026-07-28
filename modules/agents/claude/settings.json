@@ -1,0 +1,11 @@
+{
+  "theme": "auto",
+  "model": "opus",
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$HOME/.claude/statusline.sh\""
+  }
+}
