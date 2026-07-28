@@ -16,9 +16,17 @@
       url = "github:nix-community/NixOS-WSL/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Same release line as nixpkgs, for the same reason. Used as a NixOS module
+    # (not a standalone homeManagerConfiguration as in v1), so `nixos-rebuild`
+    # activates the user environment in the same atomic switch as the system.
+    home-manager = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, nixos-wsl, ... }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, nixos-wsl, home-manager, ... }:
     let
       system = "x86_64-linux";
     in
@@ -35,6 +43,7 @@
         };
         modules = [
           nixos-wsl.nixosModules.default
+          home-manager.nixosModules.home-manager
           ./hosts/wsl.nix
         ];
       };

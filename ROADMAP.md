@@ -37,16 +37,45 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
       WSL distro running; it retires with Fedora in Phase 7.
 - **Milestone:** NixOS-WSL boots and rebuilds from the hull flake. ✅
 
-## Phase 2 — Module interfaces + the `env` panel
+## Phase 2 — The environment modules (`shell`, `editor`, `tools`)
 
-- [ ] Design each panel's **option interface** (the deep-module work — what each
-      module exposes vs hides). This is where quality is won; do it deliberately.
-- [ ] Port the environment content from `hull-fedora`, quality-checking each
-      piece (zsh, neovim, wezterm, herdr, starship, the CLI tool list, Node).
-      Carry working config; do not rewrite for its own sake (ADR 0005).
-- **Milestone:** `hull switch` yields the full interactive environment on WSL.
+**Scope correction (2026-07-27).** This phase was written as "design each
+module's option interface" — deep-module work done deliberately up front. That
+was overbuilt. With one host consuming these modules, there is nothing to design:
+options exist to let a *second* consumer differ, and the second consumer
+(`native`) does not exist yet. Designing its interface now would be guessing.
+The content itself is ~60 lines of Home Manager options that port near-verbatim.
+So Phase 2 is **porting**, and options get added in Phase 6 when `native` shows
+what actually needs to vary. The genuine deep-module work is Phase 3's
+`git-identity`, which has real logic and a data dependency.
 
-## Phase 3 — The `git-identity` panel
+- [x] home-manager added as a flake input on `release-26.05`, wired as a **NixOS
+      module** (not v1's standalone `homeManagerConfiguration`) so one
+      `nixos-rebuild switch` activates system and user environment atomically.
+- [x] `modules/shell` — zsh + autosuggestion + syntax highlighting, starship,
+      fzf, aliases. zsh set as the login shell at the host level.
+- [x] `modules/editor` — neovim + the lua config, linked out-of-store.
+- [x] `modules/tools` — ripgrep, fd, jq, lazygit, nodejs_22, herdr + its config.
+- [x] `modules/paths.nix` — the `hull.repoPath` option; fixes v1's hardcoded
+      `~/.dotfiles` (Gap C) for out-of-store links.
+- [x] Dropped on port: v1's `glibcLocales` override and `LOCALE_ARCHIVE` /
+      `LANG` (NixOS sets these correctly; they were Fedora artifacts), and
+      `home.sessionPath = ~/.local/bin` (v1's imperative CLI launcher — Phase 4's
+      CLI is a Nix package and needs no such path).
+- [x] `nixos-rebuild build` green, out-of-store links verified to resolve into
+      the working tree, login shell verified as zsh.
+- [x] **`nixos-rebuild switch` run 2026-07-28.** Generation 10; zsh live as the
+      login shell; all user packages resolve; both out-of-store links resolve
+      into the working tree; the generation cap dropped 7 during the switch.
+- [x] `programs.nix-ld.enable` added so VS Code Remote-WSL can run its injected
+      generic-linux `node`. Host-layer, not a module — `native` should decide
+      deliberately in Phase 6 rather than inherit it. See HANDOVER.
+- [ ] Confirm experientially: prompt, autosuggestions, nvim launching and
+      lazy.nvim fetching plugins, herdr running, aliases.
+- **Milestone:** the full interactive environment on WSL. ✅ *(Activated and
+  verified; the interactive feel is still being lived in.)*
+
+## Phase 3 — The `git-identity` module
 
 **Carry-forward constraints from v1 — do not rediscover these** (`hull-fedora/.plan/DECISIONS.md`):
 
@@ -63,6 +92,26 @@ Fresh repo stood up; v1 frozen at `hull-fedora`; decisions captured as ADRs
   repos, but nothing load-bearing should depend on which gh account is active.
 - **D3.2 — accounts live in a committed `profile.nix`**, not a gitignored one:
   flakes cannot see untracked files.
+
+**Identity settled 2026-07-28** — the data this module generates from is now
+decided, so Phase 3 has no naming questions left. `alx` as git `user.name` on
+both accounts; per-account GitHub noreply addresses as `user.email`. Full values
+and reasoning in HANDOVER.
+
+**Carried from the v1 registry review (2026-07-28) — three things must not port:**
+1. `hull.url = "path:/home/adam/burnish-studio/hull-fedora"` — this *is* "Gap C",
+   preserved in the file: an absolute path, the old username, and pointing at the
+   frozen v1.
+2. **The dependency direction inverts.** v1 had registry depending on hull and
+   calling `hull.lib.mkHome`. Here **hull takes registry as an input** and
+   registry becomes pure data, because hull produces `nixosConfigurations` and
+   owns the hosts. Confirmed by the captain 2026-07-28.
+3. `fullName = "alex"` with `hosts.wsl.username = "adam"` — the naming drift
+   `alx` exists to end. `hosts.<name>.username` becomes `alx` on both hosts,
+   which is also what drives the `nixos` → `alx` account rename.
+
+Worth keeping: the `accounts` structure, the org/alias/key naming (already
+matches D1.5), and `default = true` on burnish.
 
 **Interim state (2026-07-27):** NixOS is authenticated as `burnish-studio` via
 `gh auth login` over HTTPS. There is deliberately **no SSH key, no
@@ -102,9 +151,17 @@ routing actually works.
         that the guest's free-space figure is meaningless on WSL. It must
         contradict `df`, not repeat it. The virtual disk size is not readable from
         inside the guest, so point at Windows rather than guess.
+      - `hull doctor` — **home-directory audit** (decided 2026-07-28). Hold a
+        declared list of expected paths (Home-Manager-managed files, the SSH
+        keys, known caches) and report anything in `$HOME` hull does not
+        recognise. This is the answer to "the home directory accumulates things
+        and I cannot tell what is legitimate" — see "What Nix owns" in HANDOVER
+        for why declaring `$HOME` itself is the wrong fix. Must also measure the
+        home directory separately from the store: `~/.vscode-server-insiders`
+        alone is 675 MB and `du -sh /nix/store` cannot see it.
 - **Milestone:** the `hull` package builds, shellcheck passes, tests pass.
 
-## Phase 5 — The `agents` panel
+## Phase 5 — The `agents` module
 
 - [ ] Port claude config, `AGENTS.md`, statusline from `hull-fedora`, quality-checked.
 
@@ -134,10 +191,18 @@ Phases 2–6. Nothing blocks it now that `claude-code` runs on NixOS; the
 
 ## Open questions to resolve as we go
 
-- **Module interface design** — the exact options each panel exposes. Undesigned.
+- **Module interface design** — the exact options each module exposes. Deferred to Phase 6 — see the Phase 2 scope correction.
 - **Registry ↔ flake wiring** — `github:<you>/registry` input vs a path override;
   must be portable (no hardcoded machine paths). Prerequisite: push the registry
-  to a private remote (it has none yet).
+  to a private remote (it has none yet). *Direction is settled (2026-07-28): hull
+  takes registry as an input, not the reverse.* What remains open is the
+  mechanism, and specifically how a private input authenticates during a rebuild
+  run as root.
+- **Secrets have a hard floor.** The Nix store is world-readable, so no token or
+  private key can ever live in a Nix file. Confirmed 2026-07-28 that `sops`/
+  `agenix` are the *wrong* tool for the `gh` token: those encrypt secrets that
+  live in git, and this is per-machine state that must never enter git at all.
+  They may still earn their place later for something genuinely shared.
 - **Sharing a `lib/` pure function** between a NixOS/HM module and the CLI
   package — sound in principle, mechanism not yet verified.
 - **Node / pnpm under NixOS** — pin via nix packages, not nvm/corepack (v1's

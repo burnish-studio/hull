@@ -16,13 +16,65 @@
   # Already a declared runtime dep of `hull account add` (ADR 0004), so this is
   # pulling a known-needed tool forward, not a new dependency.
   # claude-code: hull is developed on the machine it configures. Temporary home —
-  # this moves into the `agents` panel in Phase 5.
+  # this moves into the `agents` module in Phase 5.
   # Taken from `unstable`, not the 26.05 pin: a Nix-installed binary cannot
   # self-update, and Claude Code ships often enough that the release branch goes
   # stale in weeks (26.05 had 2.1.187 while unstable had 2.1.220 — old enough to
   # not list the current models). Unstable still lags upstream somewhat; that is
-  # accepted. It is the only package taken from unstable — see flake.nix.
+  # accepted. It is one of two packages taken from unstable (herdr is the other,
+  # in modules/tools) — see flake.nix.
+  #
+  # These are SYSTEM packages, not user packages, on purpose: `sudo nixos-rebuild`
+  # runs as root and needs `git` to read a flake from a git repo. A git installed
+  # only into the user's Home Manager profile is invisible to root.
   environment.systemPackages = [ pkgs.git pkgs.gh unstable.claude-code ];
+
+  # --- Foreign binaries ---------------------------------------------------------
+  # VS Code Remote-WSL injects a server into ~/.vscode-server*/ from the Windows
+  # side: a generic-linux prebuilt `node` that asks for the interpreter
+  # /lib64/ld-linux-x86-64.so.2. NixOS is not FHS, so that path holds `stub-ld` —
+  # a decoy whose only job is to print "cannot run dynamically linked executables"
+  # and point at https://nix.dev/permalink/stub-ld. nix-ld replaces the decoy with
+  # a real loader and supplies a base library set (libstdc++, zlib, openssl, curl,
+  # systemd — see nixos/modules/programs/nix-ld.nix), which is what node needs.
+  #
+  # Chosen over nix-community/nixos-vscode-server, which patchelfs the server via
+  # a systemd USER service — precisely what HANDOVER forbids depending on while
+  # the user@1000 bug lives. nix-ld is a system-level setting, so it is immune.
+  #
+  # This does not breach "hull never touches Windows": VS Code runs over there and
+  # connects inward; hull only permits the injected binary to execute. The server
+  # itself is downloaded imperatively and is NOT reproducible from this repo —
+  # same category as lazy.nvim's plugins (see modules/editor), already accepted.
+  #
+  # Lives at the host layer, not in a module: `native` does not exist yet, so
+  # there is no second consumer to design a seam for (ADR 0003). Promote it in
+  # Phase 6 if the native host wants it too.
+  programs.nix-ld.enable = true;
+
+  # --- User environment --------------------------------------------------------
+  # zsh must be enabled at the NixOS level and named as the account's shell:
+  # Home Manager's `programs.zsh` configures zsh but cannot change the login
+  # shell, which is a property of the user account in /etc/passwd.
+  programs.zsh.enable = true;
+  users.users.nixos.shell = pkgs.zsh;
+
+  # Home Manager runs as a NixOS module, so `nixos-rebuild switch` activates the
+  # user environment in the same atomic switch as the system. The modules below
+  # are host-agnostic; host-specific variation (GUI, wezterm, fonts) stays here.
+  home-manager = {
+    useGlobalPkgs = true; # HM builds against the system nixpkgs, not its own
+    useUserPackages = true; # user packages into /etc/profiles, not ~/.nix-profile
+    extraSpecialArgs = { inherit unstable; };
+    users.nixos = {
+      imports = [
+        ../modules/shell
+        ../modules/editor
+        ../modules/tools
+      ];
+      home.stateVersion = "26.05";
+    };
+  };
 
   # --- Disk hygiene (ADR 0006) -------------------------------------------------
   # WSL gives the guest a ~1 TB sparse filesystem on a 474 GB physical disk, so it
