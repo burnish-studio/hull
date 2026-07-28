@@ -1157,11 +1157,16 @@ previous reading the same day. Versions: git 2.54.0, gh 2.96.0, claude-code
   Font is installed and working, but it is manual and undeclared - it belongs on
   the Windows checklist alongside WezTerm. `CLAUDE_STATUSLINE_ICONS=0` falls back
   to text labels if a machine lacks it.
-- **herdr agent integrations are installed by hand, not by hull.** `claude` is
-  installed; `pi` is not. hull declares the packages and their dependencies but
-  does not yet trigger `herdr integration install`. Deliberate - see the session
-  log. The trigger belongs in a Home Manager activation script and earns its keep
-  at the second host.
+- **herdr agent integrations are installed by hand, not by hull.** Both `claude`
+  (v7) and `pi` (v6) are installed and report `current`. hull declares the
+  packages and their dependencies but does not yet trigger `herdr integration
+  install`. Deliberate - see the session log. The trigger belongs in a Home
+  Manager activation script and earns its keep at the second host. Note it must
+  initialise each agent first: `herdr integration install pi` fails outright
+  until the agent has been run once and created its config directory.
+- **pi has no API keys yet.** `~/.pi/agent/auth.json` exists and is empty (mode
+  600). Per-machine secret state, never in Nix or git - same rule as the SSH
+  keys. pi cannot reach deepseek or kimi until keys are added there.
 - **The claude integration's registered hook path hardcodes `/home/nixos/`** and
   will break on the account rename. Re-run `herdr integration install claude`
   afterwards; do not hand-edit, herdr overwrites it.

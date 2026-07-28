@@ -200,6 +200,15 @@ live; the content half is not.
       writes into the hook registration, by regenerating it per machine.
       Deliberately deferred - with one host and the command already run by hand
       there is no blocker yet. Do it at Phase 6, or when a third agent arrives.
+      **Constraint found 2026-07-28: the agent must have been run at least once
+      first.** `herdr integration install pi` failed with "pi extension directory
+      not found ... install pi first" because `~/.pi` did not exist - the package
+      was installed but the tool had never started, exactly like nvim not
+      creating `~/.local/share/nvim` until first launch. A naive activation
+      script would therefore fail on every fresh machine, which is the only case
+      it exists to serve. It must initialise the agent first (`pi list` is enough
+      and is non-interactive) or tolerate the failure and retry on a later
+      activation.
 - [ ] Adopt Kun's **one-source-three-targets** pattern (reviewed 2026-07-28): a
       single `AGENTS.md` in the repo, linked out-of-store to `.claude/CLAUDE.md`,
       `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. One source of truth,
