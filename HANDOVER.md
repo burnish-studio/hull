@@ -9,7 +9,7 @@ environment has now been sat in by a human, which was the last outstanding claim
 A first slice of **Phase 5** is also live: `modules/agents` exists, holding
 `claude-code` and the Claude Code status line.
 
-Running **generation 12**. zsh is the login shell, all user packages resolve, and
+Running **generation 13**. zsh is the login shell, all user packages resolve, and
 all four out-of-store symlinks (nvim, herdr, claude settings, claude statusline)
 resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
 
@@ -69,6 +69,16 @@ Work through these at the end of a session:
    where it lives *and* say so in the session log. A silent fix teaches nobody.
 6. **Re-measure anything you quoted** - disk figures especially. They go stale
    within days and this file has carried contradictory numbers before.
+
+7. **Leave the repo easier to pick up than you found it.** The captain's
+   instruction, 2026-07-28, and it is standing rather than a one-off task:
+   keeping hull clear, concise and quick to orient in is **every** agent's
+   ongoing responsibility. If you had to dig for something the next person will
+   also need, that is a documentation defect - fix it where it lives. Prefer
+   correcting and shortening over appending. This file has grown steadily and a
+   document nobody finishes reading protects nobody; the short rules now live in
+   `AGENTS.md` at the repo root, which agent tools load automatically, precisely
+   so a newcomer is not dependent on reading all of this first.
 
 Then commit. Documentation changes ride along with the work that caused them,
 unless the change is large enough to bury the diff - the house-style sweep was
@@ -155,8 +165,37 @@ pushing breaks with no obvious cause. Phase 3 should generate the helper
 declaratively as `helper = !${pkgs.gh}/bin/gh auth git-credential`, which Nix
 keeps live.
 
+## On a fresh machine: what hull does and does not do for you
+
+Answered 2026-07-28, because "is it automatic?" is the first question anyone
+asks and the answer was not written down anywhere.
+
+**Automatic on `nixos-rebuild switch`** - one command, nothing else:
+packages; zsh as the login shell; the nvim and herdr configs; Claude Code's
+settings, status line and global instructions; pi's global instructions.
+Home Manager creates the intermediate directories, so `~/.pi/agent/AGENTS.md`
+is linked even though pi has never run. Those directories stay **real**, with
+only the leaf file symlinked, so each tool can still write its own state
+beside them (`auth.json`, herdr's sockets).
+
+**Not automatic, and correctly so** - per-machine secret state, never in Nix
+or git: `gh auth login`, pi's API keys in `~/.pi/agent/auth.json`, and (from
+Phase 3) the SSH keys.
+
+**Not automatic, and a gap worth closing:** the herdr agent integrations.
+`herdr integration install claude` / `... pi` must be run by hand. hull declares
+the packages and their dependencies but not the trigger. See the Phase 5 entry
+in `ROADMAP.md`, including the constraint that the agent must have been run once
+before its integration can install.
+
+**Not automatic by design:** the Windows-side checklist - WezTerm, and the
+JetBrainsMono Nerd Font the status line's glyphs need. hull never touches
+Windows.
+
 ## Read order
 
+0. **`AGENTS.md`** (repo root) - the rules, in one screen. Agent tools load it
+   automatically, so you may already have it. `CLAUDE.md` is a symlink to it.
 1. **this file** - state + how to work here
 2. `README.md` - what hull is, in one screen
 3. `docs/adr/0001`–`0006` - the decisions, each a standalone titled ADR
@@ -1196,31 +1235,22 @@ includes, URL rewrites, ssh blocks, the per-account shell functions), roughly
 lines 9–104 and 165–196. That extraction is Phase 3's work - budget for it there,
 not before.
 
-## House style (adopted 2026-07-28)
+## House style
 
-hull had **no** house style before this date. Documents were written in whatever
-the agent produced by default, which is why they are full of em dashes - that was
-never a decision anyone made. The captain adopted Kun's base conventions as a
-working default, explicitly **"not gospel today forever"**: they are expected to
-change, which is why they live here in a diffable document rather than anywhere
-invisible.
+**The rules now live in [`modules/agents/AGENTS.md`](modules/agents/AGENTS.md)**,
+which is linked to `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`, so every
+agent tool loads them automatically. They were parked in this file until
+something actually read them; as of 2026-07-28 something does, so they moved
+rather than being duplicated here.
 
-**The rules, from `~/dotfiles/home/AGENTS.md`:**
-- **Never use the em dash `—`. Use a plain dash `-`.**
-- Never auto-add an agent name as a commit co-author. *(already hull's rule)*
-- Never hand-edit auto-generated files.
-- On technical decisions, do not weight development cost heavily. Prefer quality,
-  simplicity, robustness and long-term maintainability.
-- For one-off or infrequent operational work, take the simplest direct
-  end-to-end path. Do not build wrappers, control planes, policy layers or
-  automation until the direct path exposes a concrete blocker. *(this is already
-  how hull is built - ADR 0003's "split only on a real second consumer" is the
-  same instinct)*
-- When fixing a bug, reproduce it end-to-end as the user experiences it first.
-- Fix lint failures, test failures and flakiness you encounter, even when
-  unrelated to the task in hand.
-- Explain the tradeoffs and get explicit approval before spawning a large swarm
-  of subagents.
+Only the history stays here. hull had **no** house style before 2026-07-28 -
+documents were written in whatever the agent produced by default, which is why
+they were full of em dashes. That was never a decision anyone made, and framing
+it as one led to a wrong recommendation once already. The captain adopted Kun's
+base conventions as a working default, explicitly **"not gospel today forever"**.
+
+Two rules in that file are hull's own rather than Kun's: writing acronyms out in
+full, and "verify, do not assert". Both were earned here.
 
 ### The em dash sweep is done (2026-07-28, commit `2eecde4`)
 
@@ -1228,10 +1258,12 @@ All 256 instances across the 12 files converted; `docs/adr/*.md` left alone as
 historical records, and the 12 en dashes (`–`) untouched. What the sweep taught
 about doing this kind of pass is in the session log for that date.
 
-The rule above is the one place an em dash legitimately survives, because it
-quotes the character as its own subject. Two other quotations of the pattern in
-the session log survive for the same reason. A future automated pass will hit all
-three - that is expected, and they should be put back.
+**Two** em dashes legitimately survive outside `docs/adr/`, each quoting the
+character as its own subject: the rule itself in `modules/agents/AGENTS.md`, and
+one quotation of the sweep pattern in this file. It was three until the house
+style moved out of here and the duplicate went with it. Verified by grep
+2026-07-28. A future automated pass will hit them; that is expected, and they
+should be put back.
 
 ## Working with the captain (alx)
 

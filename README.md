@@ -27,6 +27,7 @@ identity-agnostic and host-type-aware (see [ADR 0002](docs/adr/0002-segmentation
 
 | File | What |
 | --- | --- |
+| [`AGENTS.md`](AGENTS.md) | the rules for working here, in one screen - agent tools load it automatically |
 | [`HANDOVER.md`](HANDOVER.md) | current state + how to work here - **read first** |
 | [`ROADMAP.md`](ROADMAP.md) | the plan ahead: phases, milestones, open questions |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | the target shape (flake, hosts, modules, CLI) |
