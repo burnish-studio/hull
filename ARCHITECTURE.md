@@ -6,9 +6,9 @@ host types. This file is the **shape**; the *why* of each choice is in
 
 > Status: **partly built.** `hosts/wsl.nix` and the `shell` / `editor` / `tools` /
 > `agents` modules are real and **activated on the WSL host**; `git-identity`,
-> `lib/`, `cli/` and `hosts/native.nix` do not exist yet. `agents` is half built -
-> the Claude Code package and status line are live, `AGENTS.md` is not. See
-> `ROADMAP.md`.
+> `lib/`, `cli/` and `hosts/native.nix` do not exist yet. `agents` is wired -
+> packages, status line and one `AGENTS.md` linked to both agents - with only the
+> declarative install of herdr's integrations still owed. See `ROADMAP.md`.
 
 ## Top-level layout (`*` = exists today)
 

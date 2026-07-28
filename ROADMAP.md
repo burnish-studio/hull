@@ -209,15 +209,20 @@ live; the content half is not.
       it exists to serve. It must initialise the agent first (`pi list` is enough
       and is non-interactive) or tolerate the failure and retry on a later
       activation.
-- [ ] Adopt Kun's **one-source-three-targets** pattern (reviewed 2026-07-28): a
-      single `AGENTS.md` in the repo, linked out-of-store to `.claude/CLAUDE.md`,
-      `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. One source of truth,
-      every agent tool reads it. See `~/dotfiles/home.nix`. Note `pi` is a fourth
-      target now - its instructions file should join the same link set.
-- [ ] Extract the house style (adopted 2026-07-28, currently recorded in
-      HANDOVER) into hull's own `AGENTS.md`, and link it to the three agent
-      tools. This is a *content* decision - what hull's agent instructions
-      actually say - which is why it did not ride along with the wiring.
+- [x] **Kun's one-source-many-targets pattern adopted.**
+      `modules/agents/AGENTS.md` is linked out-of-store to `~/.claude/CLAUDE.md`
+      and `~/.pi/agent/AGENTS.md`. The paths are not a shared convention and were
+      verified against pi's own README, not assumed. Two targets rather than
+      Kun's three: he links `.codex/` and `.config/opencode/` because he runs
+      those tools; hull links what it declares. Each is one line if that changes.
+- [x] House style **moved** out of HANDOVER into that file, not copied - one
+      source, no drift. Only its adoption history stayed behind.
+- [x] **`AGENTS.md` at the repo root** (2026-07-28), loaded automatically by both
+      agent tools, with `CLAUDE.md` a committed symlink to it. Carries the rules
+      an agent needs before touching anything - the build gate, the division of
+      labour, the hard boundaries - so onboarding no longer depends on someone
+      reading a 1300-line state document first. Keeping hull quick to orient in
+      is a standing responsibility, recorded in HANDOVER's close-out checklist.
 
 ## Phase 6 - The native host (bare metal NixOS)
 

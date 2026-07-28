@@ -6,30 +6,51 @@ Accurate as of **2026-07-28**, end of the herdr-keys + `agents`-module session.
 
 Phase 1 and Phase 2 are **complete, live and fully verified** - the interactive
 environment has now been sat in by a human, which was the last outstanding claim.
-A first slice of **Phase 5** is also live: `modules/agents` exists, holding
-`claude-code` and the Claude Code status line.
+**Phase 5's wiring is done**: `modules/agents` holds `claude-code`, `pi`,
+`python3`, the Claude Code status line, and one `AGENTS.md` linked to both
+agents. What remains of Phase 5 is triggering the herdr integrations
+declaratively.
 
-Running **generation 13**. zsh is the login shell, all user packages resolve, and
-all four out-of-store symlinks (nvim, herdr, claude settings, claude statusline)
-resolve into the working tree. VS Code Remote-WSL connects, via `nix-ld`.
+Running **generation 13** (11, 12, 13 held). zsh is the login shell, all user
+packages resolve, and all **six** out-of-store symlinks resolve into the working
+tree: nvim, herdr, Claude settings, Claude status line, and `AGENTS.md` to both
+`~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`. VS Code Remote-WSL connects,
+via `nix-ld`.
+
+**Measured 2026-07-28 at close:** guest 8.0 GB used, store 6.9 GB,
+`~/.vscode-server-insiders` 678 MB. The store grew ~600 MB this session, almost
+all of it `python3` and `pi`. Versions: git 2.54.0, gh 2.96.0, claude-code
+2.1.220, pi 0.81.1, neovim 0.12.4, herdr 0.7.5, python 3.13.14.
 
 ### ⚠️ Start here
 
 **1. Enable the two GitHub email-privacy settings** on both accounts - see the
-identity section. Not done yet, and the captain runs this.
+identity section. Not done yet, and the captain runs this. Cheap and it is the
+only thing structurally preventing a private address reaching a public commit.
 
 **2. Rename the Linux account `nixos` to `alx`** - cheapest while the home
 directory is still nearly empty, and safe now hull is pushed. Procedure below.
-Its own small session; it is the fiddliest step so far.
+Its own small session; it is the fiddliest step so far. **Afterwards, re-run
+`herdr integration install claude`** - the hook registration it wrote into
+Claude's settings hardcodes `/home/nixos/` and will break on the rename.
 
 **3. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
-the registry has no GitHub remote.
+the registry has no GitHub remote. Read the collision warning below first.
+
+**Also queued, and genuinely worth a session of its own: compress this file.**
+It reached 1311 lines on 2026-07-28, up 22% in one session. The short rules were
+extracted to `AGENTS.md` at the repo root so a newcomer is safe after 73 lines,
+which was the structural fix - but the state document itself still grew, and some
+of it will read as archaeology within a fortnight. Correcting and shortening
+matters more here than appending. Do it deliberately rather than in a hurry;
+there is load-bearing detail mixed in with the history.
 
 **Before touching anything: `git pull`.** The Fedora machine can still push to
 this repo and has done so mid-session before. See "Two machines" below.
 
 If something is wrong, `sudo nixos-rebuild switch --rollback` returns you to
-generation 11, the known-good pre-pi system (generation 10 predates `agents` entirely).
+generation 12 (agents module, before `AGENTS.md`); generation 11 predates `pi`
+and `python3`.
 
 ### ⚠️ A collision is waiting in Phase 3
 
@@ -1136,8 +1157,49 @@ comment. Generalise it: **out-of-store means no *rebuild*, not no *reload*.**
 zsh needs a rebuild plus a new shell, nvim needs reopening, herdr needs an
 explicit reload.
 
+**One `AGENTS.md`, linked to both agents.** Kun's one-source-many-targets
+pattern, which completes Phase 5's wiring. The paths are **not** a shared
+convention and were verified rather than assumed: Claude Code reads
+`~/.claude/CLAUDE.md`, pi reads `~/.pi/agent/AGENTS.md` (pi's own README: it
+loads `AGENTS.md` or `CLAUDE.md` from the global path, parent directories and
+the current directory, concatenating every match). Kun links three targets
+because he runs three tools; hull links two because it declares two. Codex and
+opencode are one line each if ever added and were deliberately not added
+speculatively.
+
+The house style **moved** into that file rather than being copied, so there is
+one source and no drift. Only the history of its adoption stayed in this
+document.
+
+**`AGENTS.md` at the repo root, and why it matters more than it looks.** The
+captain's instruction, 2026-07-28: keeping hull clear and quick to orient in is
+**every** agent's ongoing responsibility, not a task. The concrete defect it
+fixes is that this session's agent knew the build gate, the division of labour
+and the hard boundaries only because it read a 1200-line document first, and
+nothing enforced that. The root `AGENTS.md` is 73 lines and is loaded
+automatically by both agent tools, so the load-bearing rules arrive whether or
+not anyone reads the state. `CLAUDE.md` is a **committed git symlink** to it
+(mode 120000), so one file serves both tools' conventions.
+
+Recorded as step 7 of the close-out checklist above, with the emphasis on
+*correcting and shortening* over appending.
+
+**Answered "what happens on a fresh machine", which was written down nowhere.**
+Its own section above. The load-bearing finding: Home Manager creates the
+intermediate directories for `home.file`, so `~/.pi/agent/AGENTS.md` links
+correctly even though pi has never run - and those directories stay **real**,
+with only the leaf file symlinked, so each tool still writes its own state
+beside them. That is the same property that makes the herdr `config.toml`
+file-level link work, confirmed a second time.
+
+**Honest note on document size.** This file went from 1074 to 1311 lines in one
+session, which is the opposite of the direction just committed to. The content is
+real, but a deliberate compression pass is queued in "Start here" rather than
+attempted in a hurry at the end of a long session.
+
 **Verified live, not by evaluation:** generation 11 with 9, 10, 11 held; the
-activation cap dropped 8 during the switch; all four out-of-store links resolve
+activation cap dropped 8 during the switch; the four out-of-store links existing
+at that point resolve
 into the working tree; `claude` present in the user profile and absent from
 `/run/current-system/sw/bin`; the status line renders in 0.052s with the identity
 segment correct; `herdr config check` clean. The built closure
@@ -1174,13 +1236,13 @@ previous reading the same day. Versions: git 2.54.0, gh 2.96.0, claude-code
   `lazy-lock.json` and hull had dropped it.** The plugin specs were verified
   byte-identical to his, so the lock was the only missing piece. Do not remove it.
 - **`git-identity` (Phase 3) does not exist.**
-- **`agents` (Phase 5) exists but is only half built.** It holds `claude-code`
-  and the Claude Code status line. Still owed: `AGENTS.md` and Kun's
-  one-source-three-targets pattern (one file linked to `.claude/CLAUDE.md`,
-  `.codex/AGENTS.md`, `.config/opencode/AGENTS.md`), plus moving the house style
-  out of this file and into it. That is a *content* decision - what hull's agent
-  instructions actually say - not a wiring one, which is why it was not done
-  alongside the status line.
+- **`agents` (Phase 5): the wiring is done, one thing is owed.** It holds
+  `claude-code`, `pi`, `python3`, the Claude Code settings and status line, and
+  one `AGENTS.md` linked to both agents' global instructions paths. Still owed:
+  triggering `herdr integration install` declaratively from a Home Manager
+  activation script, so a fresh machine gets the agent-state integrations without
+  anyone remembering. See the Phase 5 entry in `ROADMAP.md` for the constraint
+  that makes a naive version fail.
 - **Registry ↔ flake wiring** is unsolved (registry has no GitHub remote yet;
   must avoid v1's hardcoded-path "Gap C"). Note `modules/paths.nix` now solves
   the *same class* of problem for out-of-store links - reuse the pattern.
