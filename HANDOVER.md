@@ -130,12 +130,13 @@ term is dropped — say **module**. It was a synonym that cost a translation ste
 and "panel" already means a station's console interface in the wider system map.
 The ADRs were left unedited as historical records. See `CONTEXT.md`.
 
-## The two repos (do not confuse them)
+## The three repos on this machine (do not confuse them)
 
 | repo | what | edit? |
 | --- | --- | --- |
-| `hull` | **greenfield**, NixOS-native — this repo, the main hull going forward | yes |
-| `hull-fedora` | **frozen v1** (Fedora + Home Manager, imperative bash) | **no — reference only** |
+| `~/hull` | **greenfield**, NixOS-native — this repo, the main hull going forward | yes |
+| `~/hull-fedora` | **frozen v1** (Fedora + Home Manager, imperative bash) | **no — reference only** |
+| `~/dotfiles` | **Kun Chen's dotfiles**, cloned 2026-07-28 — the upstream reference (macOS / nix-darwin) | **no — read only** |
 
 Paths differ by where you are working: on **NixOS** they are `~/hull` and
 `~/hull-fedora`; on the legacy **Fedora** distro they are under
@@ -146,6 +147,63 @@ cloned anywhere. NixOS is the intended workplace — see "Working from NixOS".
 starship, the git-identity logic, agent settings) and read the fuller metaphor
 (`ARCHITECTURE.md` §1–7) and v1's decisions (`.plan/DECISIONS.md`, the `D1..`
 log). Treat it as a quarry and a record — not as gospel; v1 had real bugs.
+
+## Reviewed against Kun's dotfiles (2026-07-28)
+
+A full read of `~/dotfiles`. Recorded so it does not need repeating.
+
+**Its shape:** three Nix files (`flake.nix`, `configuration.nix`, `home.nix`),
+flat — no `modules/` and no `hosts/`. Plus `bootstrap.sh`, `rebuild.sh`, and a
+`home/` tree holding the nvim / wezterm / herdr / claude configs.
+
+**So hull is *more* structured than its reference, not less.** That is earned —
+Kun targets one Mac, hull targets two host types — but README's "the overall
+structure is adapted from Kun Chen's dotfiles" overstates it. The **content** is
+closely derived (the zsh block, starship settings, aliases and the nvim lua are
+near-identical); the **structure** is hull's own.
+
+**Three places hull diverges and is right. Do not "fix" these back:**
+1. **`~/.dotfiles` hardcoding.** Kun derives every out-of-store path from
+   `${config.home.homeDirectory}/.dotfiles`, and `rebuild.sh` runs
+   `ln -sfn "$DIR" ~/.dotfiles` on every invocation to keep that true. That
+   symlink dance *is* the "Gap C" pattern. `hull.repoPath` removes the need.
+2. **Unfree licensing.** Kun sets `nixpkgs.config.allowUnfree = true` — blanket.
+   hull names `claude-code` in a predicate, so a future unfree dependency cannot
+   arrive unnoticed.
+3. **The herdr symlink.** Kun links the whole `.config/herdr` **directory**. hull
+   links only `config.toml`, because herdr writes sockets and session state into
+   that directory and a socket inside the repo makes the path uncopyable by Nix,
+   breaking every build. hull found a real bug in the pattern.
+
+**One place hull was behind:** `lazy-lock.json` — now fixed, see the nvim entry
+under "What is NOT done".
+
+**"Stripping the old with the new"** — the captain's recollection of Kun's
+declarative discipline is `homebrew.onActivation.cleanup = "zap"`, which removes
+any Homebrew package not listed in the config. It is a **Homebrew** mechanism and
+macOS-only. There is no NixOS equivalent to add, because the system profile
+already contains exactly what is declared; nothing accumulates to zap. hull has
+that property for free. Kun needs the line precisely because Homebrew is the
+imperative escape hatch in his setup.
+
+**Mine this for Phase 5 (`agents`):** `home/.claude/settings.json` (theme plus a
+statusline command printing model name and context-window usage), and the
+one-source-three-targets pattern — a single `home/AGENTS.md` linked to
+`.claude/CLAUDE.md`, `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. His
+AGENTS.md is 15 terse lines. Two rules are already hull convention. **One is not:
+"Never use the em dash."** hull's documents use them throughout, so adopt that
+rule deliberately or not at all — do not import the file wholesale.
+
+**Mine this for Phase 6 (`native`):** `home/.config/wezterm/wezterm.lua`, and
+font management via `nerd-fonts.hack` + `fonts.fontconfig.enable`. Both are
+Windows-side manual checklist items on WSL; on `native` they become declarative.
+
+**Not adopted: continuous integration.** Kun's only GitHub workflow auto-closes
+pull requests (a personal-repo policy) — he runs **no** build check in CI. A
+workflow running `nixos-rebuild build` on push would have caught the one bad
+`claude-code` push, but for a solo repo where the local gate is run reliably the
+marginal value is low and it adds a third-party action dependency. Revisit only
+if pushing-from-one-machine-and-rebuilding-on-another becomes routine.
 
 ## Current system state (2026-07-28)
 
@@ -752,10 +810,16 @@ the hull side.
   machine, including `hull-fedora`, still cannot commit.
 - **Module options are undesigned**, deliberately — Phase 6, when `native` shows
   what needs to vary.
-- **nvim plugins are not reproducible.** `lua/plugin.lua` bootstraps lazy.nvim,
-  which git-clones plugins into `~/.local/share/nvim` at runtime. The *config* is
-  in hull; the *plugins* are not managed by Nix. First `nvim` launch needs
-  network. This was true in v1 too — noted, not a regression.
+- **nvim plugins are pinned but not Nix-managed** (corrected 2026-07-28).
+  `lua/plugin.lua` bootstraps lazy.nvim, which git-clones plugins into
+  `~/.local/share/nvim` at runtime, so Nix does not manage them and first launch
+  needs network. But `nvim/lazy-lock.json` now pins all 9 to exact commits, so
+  the *set* is reproducible even though the *mechanism* is not. `:Lazy update`
+  rewrites the lock as a reviewable git diff.
+  Earlier versions of this file said plugins were "not reproducible… true in v1
+  too, not a regression". That was wrong in an important way: **Kun ships a
+  `lazy-lock.json` and hull had dropped it.** The plugin specs were verified
+  byte-identical to his, so the lock was the only missing piece. Do not remove it.
 - **`git-identity` (Phase 3) and `agents` (Phase 5) modules do not exist.**
 - **Registry ↔ flake wiring** is unsolved (registry has no GitHub remote yet;
   must avoid v1's hardcoded-path "Gap C"). Note `modules/paths.nix` now solves

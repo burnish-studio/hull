@@ -164,11 +164,24 @@ routing actually works.
 ## Phase 5 — The `agents` module
 
 - [ ] Port claude config, `AGENTS.md`, statusline from `hull-fedora`, quality-checked.
+- [ ] Adopt Kun's **one-source-three-targets** pattern (reviewed 2026-07-28): a
+      single `AGENTS.md` in the repo, linked out-of-store to `.claude/CLAUDE.md`,
+      `.codex/AGENTS.md` and `.config/opencode/AGENTS.md`. One source of truth,
+      every agent tool reads it. See `~/dotfiles/home.nix`.
+- [ ] Move `claude-code` out of `hosts/wsl.nix` and into this module, where it
+      belongs — it sits there temporarily.
+- [ ] Decide the em-dash rule deliberately. Kun's `AGENTS.md` forbids em dashes;
+      hull's documents use them throughout. Pick one; do not inherit by accident.
 
 ## Phase 6 — The native host (bare metal NixOS)
 
 - [ ] Native NixOS install on the (non-precious) machine; `hosts/native.nix` with
-      the GUI layer (Wayland, fonts, wezterm).
+      the GUI layer (Wayland, fonts, wezterm). Mine `~/dotfiles` for
+      `home/.config/wezterm/wezterm.lua` and for font management via
+      `nerd-fonts.hack` + `fonts.fontconfig.enable` — both are manual
+      Windows-side items on WSL and become declarative here.
+- [ ] Decide deliberately whether `native` wants `programs.nix-ld`. WSL needs it
+      for VS Code's injected server; a native host may not need it at all.
 - [ ] **Do not copy the WSL disk-hygiene block** (ADR 0006). On a real disk,
       pressure-driven `nix.settings.min-free` / `max-free` is the correct mechanism
       and the activation-time cap is unnecessary. This is the host-type seam doing
