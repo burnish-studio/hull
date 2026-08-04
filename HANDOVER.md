@@ -29,8 +29,8 @@ the agent tools installed there are invisible to any fresh shell. Separately,
 `main` is one commit (`4ca04ad`) ahead of `origin/main` (`288d6b4`) - unpushed,
 which the two-machines warning below cares about.
 
-**Two rename follow-ups are still open** and are tasks 1 and 2 below: the herdr
-Claude hook registration, and `~/.vscode-server-insiders`.
+**One rename follow-up is left**, task 1 below: `~/.vscode-server-insiders`. The
+herdr Claude hook registration was fixed 2026-08-04 - see the session log.
 
 **Measured 2026-07-28 at close:** guest 8.2 GB used, store 7.0 GB,
 `~/.vscode-server-insiders` 678 MB. Versions: git 2.54.0, gh 2.96.0, claude-code
@@ -39,52 +39,13 @@ Claude hook registration, and `~/.vscode-server-insiders`.
 
 ### ⚠️ Start here
 
-**First, the one action only the captain can take: `nixos-rebuild switch`.** The
-tree holds a single built and verified un-switched change (`home.sessionPath`,
-described above). Nothing else in this list is blocked on it, but the agent
-tooling in `~/.local/bin` stays invisible to fresh shells until it lands.
-
-**1. Re-register the herdr Claude hook - it currently fires at nothing.**
-`modules/agents/claude/settings.json` still registers the `SessionStart` hook as
-`bash '/home/nixos/.claude/hooks/herdr-agent-state.sh' session`, and that path no
-longer exists. The script itself is fine and in the right place: `herdr
-integration status` reports `claude: current (v7)` at
-`/home/alx/.claude/hooks/herdr-agent-state.sh`. Only the registration is stale.
-
-`herdr integration install claude` rewrites it, **but decide this first**: that
-file is an out-of-store symlink into the working tree, so herdr writes through it
-into hull, and the line it writes will contain `/home/alx`. That is an account
-name in a public repo - a *second* ADR 0002 breach, not the same one as
-`username = "alx"`. Three options, the captain's call:
-- **Accept it**, consistent with the breach already taken, and let Phase 3 remove
-  both together.
-- **Reinstall, then hand-edit the path to `$HOME`** - which is exactly what the
-  `statusLine` entry three lines below it already does, so the file would become
-  self-consistent. This section used to say "do not hand-edit"; that is about
-  *durability*, not danger. herdr only overwrites on the next reinstall, so the
-  edit holds until then, and the reinstall is not routine.
-- **Raise it with herdr upstream**, since `$HOME` is the portable form and this
-  will bite anyone whose config is generated into a dotfiles repo.
-
-`pi` needs no equivalent - verified 2026-07-28 that its extension is discovered
-by directory, with no absolute path written anywhere.
-
-**This got more expensive on 2026-08-04, and is no longer only cosmetic.** The
-captain now runs firstmate on the **herdr** backend, and firstmate reads herdr's
-native per-pane agent state (busy / idle / blocked) to supervise its workers.
-That state is exactly what this hook feeds. With the registration dead, herdr
-falls back to guessing from process detection - the weaker mechanism the
-integration exists to replace - so firstmate supervises on degraded signal. Still
-the captain's call between the three options, but it is now paying a real cost
-rather than sitting idle.
-
-**2. Delete `~/.vscode-server-insiders`** - 678 MB, and 11 files inside it still
+**1. Delete `~/.vscode-server-insiders`** - 678 MB, and 11 files inside it still
 reference `/home/nixos` (logs, caches, two copilot helpers), confirmed present
 2026-07-28. VS Code re-injects it on the next connect. It is imperative,
 non-reproducible state hull already disclaims, so rebuilding it is cheaper than
 auditing it.
 
-**3. Then compress this file.** It reached ~1400 lines on 2026-07-28 and is still
+**2. Then compress this file.** It reached ~1400 lines on 2026-07-28 and is still
 growing. The short rules were extracted to `AGENTS.md` at the repo root so a
 newcomer is safe after 73 lines, which was the structural fix - but the state
 document itself keeps growing, and some of it reads as archaeology already. The
@@ -93,7 +54,7 @@ little that is not superseded. Correcting and shortening matters more here than
 appending. Do it deliberately; there is load-bearing detail mixed into the
 history.
 
-**4. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
+**3. Then Phase 3 - `git-identity`**, still gated on one thing outside the code:
 the registry has no GitHub remote. Read the collision warning below first. Note
 the rename has already paid part of Phase 3's bill: `hosts/wsl.nix` now binds the
 username once, so wiring the registry in is a one-line swap rather than a hunt.
@@ -1459,10 +1420,34 @@ now false, so it has been re-scoped to that date rather than left standing. Disk
 figures were not re-measured and are now labelled a week stale rather than quietly
 carried forward.
 
-**Left for the captain, unresolved deliberately:** task 1's herdr hook decision.
-It stopped being cosmetic this session - firstmate now supervises on the herdr
-backend and consumes exactly the agent state that dead registration feeds - so
-its cost is recorded in task 1, but the three-way choice is still his.
+**The herdr hook is fixed - old task 1 is closed.** The captain chose the
+hand-edit-to-`$HOME` option. Two things about the repair are worth knowing before
+anyone repeats it:
+
+- **`herdr integration install claude` APPENDS, it does not replace.** After
+  running it the file held *two* `SessionStart` herdr entries - the dead
+  `/home/nixos` one and a new `/home/alx` one. Deleting the stale block is a
+  manual step. Anyone assuming the reinstall is idempotent will silently end up
+  with a duplicate hook firing every session.
+- **herdr writes the path in single quotes**, `bash '/home/alx/…' session`. Single
+  quotes do not expand `$HOME`, so hand-editing the path without also switching
+  to double quotes produces a literal `$HOME` directory that does not exist - a
+  silent no-op that looks correct in a diff. The final line matches the
+  `statusLine` entry's form: `bash "$HOME/.claude/hooks/herdr-agent-state.sh"
+  session`.
+
+Verified after the edit: file is valid JSON, exactly one herdr hook, no
+`/home/alx` or `/home/nixos` anywhere in it, and the command as written runs to
+exit 0 with the resolved target present. herdr also rewrote the three `-axi`
+entries into its own key order and dropped the trailing newline; both normalised.
+
+**The captain floated a naming idea for the identity repo: `passport`** (over
+`registry`), on the reasoning that hull stays general-purpose and simply expects
+you to bring your own. Recorded because the metaphor carries the dependency
+direction correctly - hull points at it, it does not point at hull, which is
+exactly the inversion the ROADMAP already flags as a v1 mistake not to port. He
+arrived at the split independently, which is corroboration for ADR 0002.A rather
+than a new decision; Phase 3 already owns the work. Naming is his call.
 
 ## What is NOT done
 
