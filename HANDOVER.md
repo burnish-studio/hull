@@ -1,6 +1,6 @@
 # Handover - for an agent picking this up cold
 
-Accurate as of **2026-07-28**, end of the account-rename session.
+Accurate as of **2026-08-04**, end of the agent-tooling PATH session.
 
 ## One-line state
 
@@ -17,21 +17,32 @@ nvim, herdr, Claude settings, Claude status line, and `AGENTS.md` to both
 `~/.claude/CLAUDE.md` and `~/.pi/agent/AGENTS.md`. VS Code Remote-WSL connects,
 via `nix-ld`.
 
-Running **generation 14** (12, 13, 14 held; the switch dropped 11). `nixos-rebuild
-build --flake .#wsl` re-run afterwards produces
-`yrxd0p72dx5apj40jfwyx4p0xis3dj7w-nixos-system-wsl-26.05.20260722.b3fe958`, which
-is byte-identical to `/run/current-system` and `/run/booted-system` - so the
-working tree and the running machine are the same thing, checked rather than
-assumed.
+Running **generation 14** (12, 13, 14 held; the switch dropped 11) at
+`yrxd0p72dx5apj40jfwyx4p0xis3dj7w-nixos-system-wsl-26.05.20260722.b3fe958`. That
+was byte-identical to the working tree's build at the end of the rename session.
+
+**It is no longer: the tree is one un-switched change ahead** (2026-08-04). The
+`home.sessionPath` addition in `modules/tools` builds clean as
+`bfc54klc9fgb6bg5ihb26fl9p93wyxxf-nixos-system-wsl-26.05.20260722.b3fe958`, but
+only the captain switches. Until he does, `~/.local/bin` is absent from PATH and
+the agent tools installed there are invisible to any fresh shell. Separately,
+`main` is one commit (`4ca04ad`) ahead of `origin/main` (`288d6b4`) - unpushed,
+which the two-machines warning below cares about.
 
 **Two rename follow-ups are still open** and are tasks 1 and 2 below: the herdr
 Claude hook registration, and `~/.vscode-server-insiders`.
 
 **Measured 2026-07-28 at close:** guest 8.2 GB used, store 7.0 GB,
 `~/.vscode-server-insiders` 678 MB. Versions: git 2.54.0, gh 2.96.0, claude-code
-2.1.220, pi 0.81.1, neovim 0.12.4, herdr 0.7.5, python 3.13.14.
+2.1.220, pi 0.81.1, neovim 0.12.4, herdr 0.7.5, python 3.13.14. Not re-measured
+2026-08-04 - treat the disk figures as a week stale.
 
 ### ⚠️ Start here
+
+**First, the one action only the captain can take: `nixos-rebuild switch`.** The
+tree holds a single built and verified un-switched change (`home.sessionPath`,
+described above). Nothing else in this list is blocked on it, but the agent
+tooling in `~/.local/bin` stays invisible to fresh shells until it lands.
 
 **1. Re-register the herdr Claude hook - it currently fires at nothing.**
 `modules/agents/claude/settings.json` still registers the `SessionStart` hook as
@@ -57,6 +68,15 @@ name in a public repo - a *second* ADR 0002 breach, not the same one as
 
 `pi` needs no equivalent - verified 2026-07-28 that its extension is discovered
 by directory, with no absolute path written anywhere.
+
+**This got more expensive on 2026-08-04, and is no longer only cosmetic.** The
+captain now runs firstmate on the **herdr** backend, and firstmate reads herdr's
+native per-pane agent state (busy / idle / blocked) to supervise its workers.
+That state is exactly what this hook feeds. With the registration dead, herdr
+falls back to guessing from process detection - the weaker mechanism the
+integration exists to replace - so firstmate supervises on degraded signal. Still
+the captain's call between the three options, but it is now paying a real cost
+rather than sitting idle.
 
 **2. Delete `~/.vscode-server-insiders`** - 678 MB, and 11 files inside it still
 reference `/home/nixos` (logs, caches, two copilot helpers), confirmed present
@@ -1391,15 +1411,77 @@ still open.
 `~/.vscode-server-insiders` 678 MB. Unchanged across the session; nothing was
 built that was not already in the store.
 
+## Session log - 2026-08-04 (agent tooling PATH)
+
+Not a hull session by intent. The captain was bringing **firstmate** (the third
+repo, `~/firstmate`) up to operational readiness and hit hull as the blocker, so
+the hull change is small and the reasoning is most of what is worth keeping.
+
+**What changed:** one line, `home.sessionPath = [ "$HOME/.local/bin" ]`, in
+`modules/tools/default.nix`, with the reasoning in a comment there and a pointer
+added to that file's "NOT here, deliberately" header.
+
+**Why it had to be hull rather than imperative, which is the counter-intuitive
+part.** The tools themselves are deliberately outside hull - treehouse,
+no-mistakes and five `*-axi` npm packages, none in nixpkgs, installed into
+`~/.local/bin` with npm's prefix pointed there via `~/.npmrc`. The captain's
+instinct was that this add-on layer should sit on top of hull and simply not be
+clobbered by reruns, and that instinct is right: **checked against the Home
+Manager manifest, HM owns `~/.local/state` but not `~/.local/bin`**, so rebuilds
+never touch the tools. But PATH is generated *wholly* by HM, so a PATH set
+anywhere else is the one thing a rerun does discard. Declaring the directory is
+what makes the imperative layer above it durable. The inversion is worth
+remembering: hull owning the *pointer* is what keeps the *contents* free.
+
+**Verified, not asserted:** `nixos-rebuild build --flake .#wsl` succeeds and the
+generated `hm-session-vars.sh` contains exactly
+`export PATH="$HOME/.local/bin${PATH:+:}$PATH"` - `$HOME` unexpanded at build
+time, so no account name enters the repo. Build is
+`bfc54klc9fgb6bg5ihb26fl9p93wyxxf-…`; `/run/current-system` is still
+`yrxd0p72dx5apj40jfwyx4p0xis3dj7w-…`. **Not switched** - captain's step.
+
+**An unrelated write landed in the tree and should be reviewed before commit.**
+Running `gh-axi setup hooks` (and the same for `chrome-devtools-axi` and
+`lavish-axi`) appends `SessionStart` entries to `~/.claude/settings.json`, which
+is an out-of-store symlink, so three hook blocks appeared in
+`modules/agents/claude/settings.json` unprompted. That is the documented and
+intended consequence of the out-of-store link making drift visible, not a
+malfunction - but it is the exact hazard that file's comment warns about, so it
+was read before being left in place. **Checked: identity-free, no domains, no
+secrets, safe for a public repo.** Note the hooks invoke bare command names, so
+they silently do nothing until the `sessionPath` change is switched.
+
+**Corrections made to this file:** "What is NOT done" still listed the account
+rename as pending on the machine; it has been done since 2026-07-28 and the
+top-of-file block already said so. Struck. The state block's "working tree and
+running machine are the same artefact" claim was true at the rename close and is
+now false, so it has been re-scoped to that date rather than left standing. Disk
+figures were not re-measured and are now labelled a week stale rather than quietly
+carried forward.
+
+**Left for the captain, unresolved deliberately:** task 1's herdr hook decision.
+It stopped being cosmetic this session - firstmate now supervises on the herdr
+backend and consumes exactly the agent state that dead registration feeds - so
+its cost is recorded in task 1, but the three-way choice is still his.
+
 ## What is NOT done
 
 - ~~The interactive environment has not been lived in.~~ **Done 2026-07-28.**
   nvim launched for the first time, lazy.nvim installed all 9 pinned plugins,
   `lazy-lock.json` unchanged afterwards, rose-pine rendering correctly. herdr
   keybindings still want a hands-on pass, but the module is proven.
-- **The Linux account is still `nixos` on the machine.** hull now declares `alx`
-  and the change is build-gated and committed, but nothing has been switched -
-  the rename is a captain-run step. Procedure and caveats above.
+- ~~The Linux account is still `nixos` on the machine.~~ **Done 2026-07-28** -
+  the rename was switched and verified (`uid=1000(alx)`, `/home/nixos` gone).
+  This entry still read as pending on 2026-08-04 and was corrected then; the
+  top-of-file state block had recorded it as done since the rename session.
+- **The agent tools in `~/.local/bin` are imperative and unreproducible** (new
+  2026-08-04). treehouse, no-mistakes and the five `*-axi` packages have no
+  nixpkgs derivations, so they are installed by npm and by upstream install
+  scripts. hull declares only the PATH entry (`modules/tools`); it does not
+  install, pin, update or remove any of them, and a rebuild will not restore them
+  on a fresh machine. Same category as SSH keys, and stated as such in the
+  module. A version-drift or supply-chain question about those tools is not a
+  question hull can answer.
 - ~~The two GitHub email-privacy settings are not enabled.~~ **Closed
   2026-07-28** - the noreply addresses in use came from those settings pages, so
   privacy is on. *Block command-line pushes that expose my email* is a separate
